@@ -3,7 +3,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'ramokhua'  # Replace with a secure key in production
+SECRET_KEY = 'your-secret-key'  # Replace with a secure key in production
 
 DEBUG = True
 
