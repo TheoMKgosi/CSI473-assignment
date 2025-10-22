@@ -28,6 +28,7 @@ export default function App() {
         <Stack.Screen name="PanicButton" component={PanicButton} />
         <Stack.Screen name="Notifications" component={Notifications} />
         <Stack.Screen name="PatrolStats" component={PatrolStats} />
+        <Stack.Screen name="Home" component={Dashboard} /> {/* Redirects 'home' to Dashboard */}
       </Stack.Navigator>
     </NavigationContainer>
   );

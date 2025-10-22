@@ -18,7 +18,7 @@ const OptOutCancel = () => {
       <View style={styles.statusContainer}>
         <Text style={styles.status}>Status</Text>
         <Text style={styles.active}>Active</Text>
-        <Image source={{ uri: 'path-to-tick-icon' }} style={styles.tick} />
+        <Image source={require('../assets/tick-icon.png')} style={styles.tick} />
       </View>
       <View style={styles.cancelContainer}>
         <Text style={styles.cancelText}>Cancel Subscription</Text>
@@ -31,14 +31,14 @@ const OptOutCancel = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff', borderRadius: 10 },
-  title: { fontSize: 28, color: '#000' },
-  statusContainer: { borderWidth: 1, borderColor: '#61A3D2', borderRadius: 5, height: 112 },
-  status: { fontSize: 24, color: '#000' },
-  active: { fontSize: 24, color: '#000' },
+  title: { fontSize: 28, color: '#000', fontFamily: 'Inter', textAlign: 'center', marginVertical: 10 },
+  statusContainer: { borderWidth: 1, borderColor: '#61A3D2', borderRadius: 5, padding: 10, marginVertical: 10, alignItems: 'center' },
+  status: { fontSize: 24, color: '#000', fontFamily: 'Inter' },
+  active: { fontSize: 24, color: '#000', fontFamily: 'Inter' },
   tick: { width: 35, height: 35 },
-  cancelContainer: { borderWidth: 1, borderColor: '#61A3D2', borderRadius: 5, height: 112 },
-  cancelText: { fontSize: 24, color: '#000' },
-  cancelNow: { fontSize: 24, color: '#FF0004' },
+  cancelContainer: { borderWidth: 1, borderColor: '#61A3D2', borderRadius: 5, padding: 10, marginVertical: 10, alignItems: 'center' },
+  cancelText: { fontSize: 24, color: '#000', fontFamily: 'Inter' },
+  cancelNow: { fontSize: 24, color: '#FF0004', fontFamily: 'Inter' },
 });
 
 export default OptOutCancel;
