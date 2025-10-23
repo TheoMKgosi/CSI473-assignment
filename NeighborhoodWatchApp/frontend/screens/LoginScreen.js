@@ -6,22 +6,26 @@ import React, { useState } from 'react';
        const [email, setEmail] = useState('');
        const [password, setPassword] = useState('');
 
-       const handleLogin = async () => {
-         try {
-           const response = await axios.post('https://<your-codespace>.github.dev:8000/api/login/', {
-             email,
-             password,
-           });
-           if (response.data.success) {
-             Alert.alert('Success', 'Logged in successfully!');
+       //const handleLogin = async () => {
+         //try {
+         //  const response = await axios.post('https://<your-codespace>.github.dev:8000/api/login/', {
+        //     email,
+          //   password,
+           //});
+           //if (response.data.success) {
+            // Alert.alert('Success', 'Logged in successfully!');
              // Navigate to main app screen (to be implemented)
-           } else {
-             Alert.alert('Error', 'Invalid credentials');
-           }
-         } catch (error) {
-           Alert.alert('Error', 'Failed to login');
-         }
-       };
+           //} else {
+             //Alert.alert('Error', 'Invalid credentials');
+           //}
+        // } catch (error) {
+          // Alert.alert('Error', 'Failed to login');
+       //  }
+      // };
+
+      const handleLogin = () => {
+        navigation.navigate('Home');
+      };
 
        return (
          <View style={styles.container}>
