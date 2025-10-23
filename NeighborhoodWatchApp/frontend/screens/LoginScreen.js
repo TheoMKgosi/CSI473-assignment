@@ -25,7 +25,7 @@ import React, { useState } from 'react';
 
       const handleLogin = () => {
         navigation.navigate('Home');
-      };
+      };a
 
        return (
          <View style={styles.container}>
