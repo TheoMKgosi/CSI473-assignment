@@ -1,27 +1,31 @@
-from django.db import models
+from rest_framework import serializers
 from django.contrib.auth.models import User
+from .models import UserProfile, ForumPost, PatrolStat, EmergencyAlert
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    full_name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
-    address = models.CharField(max_length=200)
-    is_approved = models.BooleanField(default=False)
-    subscription_active = models.BooleanField(default=True)
-    last_payment_date = models.DateField(null=True, blank=True)
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'password']
+    def create(self, validated_data):
+        user = User.objects.create_user(**validated_data)
+        return user
 
-class ForumPost(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    likes = models.IntegerField(default=0)
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = '__all__'
 
-class PatrolStat(models.Model):
-    completed = models.IntegerField(default=0)
-    response_time = models.CharField(max_length=50, default='0 min')
-    updated_at = models.DateTimeField(auto_now=True)
+class ForumPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ForumPost
+        fields = '__all__'
 
-class EmergencyAlert(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    location = models.CharField(max_length=200, blank=True)
+class PatrolStatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatrolStat
+        fields = '__all__'
+
+class EmergencyAlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmergencyAlert
+        fields = '__all__'
