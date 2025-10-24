@@ -1,5 +1,8 @@
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import * as Font from 'expo-font';
+import { AppLoading } from 'expo';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -10,7 +13,24 @@ import SubscriptionScreen from './screens/SubscriptionScreen';
 
 const Stack = createStackNavigator();
 
-export default function App() {
+const App = () => {
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  const loadFonts = async () => {
+    await Font.loadAsync({
+      'Inter': require('./assets/fonts/Inter-Regular.ttf'),
+    });
+    setFontsLoaded(true);
+  };
+
+  useEffect(() => {
+    loadFonts();
+  }, []);
+
+  if (!fontsLoaded) {
+    return <AppLoading />;
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login">
@@ -24,4 +44,6 @@ export default function App() {
       </Stack.Navigator>
     </NavigationContainer>
   );
-}
+};
+
+export default App;
