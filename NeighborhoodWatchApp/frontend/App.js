@@ -19,11 +19,12 @@ const App = () => {
   const loadFonts = async () => {
     try {
       await Font.loadAsync({
-        Inter: require('./assets/fonts/Inter_18pt-Regular.ttf'),
+        Inter: require('./assets/fonts/Inter-Regular.ttf'),
       });
       setFontsLoaded(true);
     } catch (error) {
       console.log('Font Loading Error:', error);
+      setFontsLoaded(true); // Proceed even if font fails
     }
   };
 
@@ -32,7 +33,11 @@ const App = () => {
   }, []);
 
   if (!fontsLoaded) {
-    return <View><Text>Loading fonts...</Text></View>;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading fonts...</Text>
+      </View>
+    );
   }
 
   return (

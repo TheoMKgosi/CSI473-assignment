@@ -1,12 +1,12 @@
 from django.urls import path
-from . import views
+from backend.api import views
 
 urlpatterns = [
-    path('login/', views.LoginView.as_view(), name='login'),
-    path('signup/', views.SignupView.as_view(), name='signup'),
-    path('forum/', views.ForumPostView.as_view(), name='forum'),
-    path('patrol-stats/', views.PatrolStatView.as_view(), name='patrol-stats'),
-    path('panic/', views.EmergencyAlertView.as_view(), name='panic'),
-    path('pay-subscription/', views.PaySubscriptionView.as_view(), name='pay-subscription'),
-    path('cancel-subscription/', views.CancelSubscriptionView.as_view(), name='cancel-subscription'),
+    path('api/signup/', views.signup, name='signup'),
+    path('api/login/', views.login, name='login'),
+    path('api/forum/', views.forum, name='forum'),
+    path('api/patrol-stats/', views.patrol_stats, name='patrol_stats'),
+    path('api/panic/', views.panic, name='panic'),
+    path('api/pay-subscription/', views.pay_subscription, name='pay_subscription'),
+    path('api/cancel-subscription/', views.cancel_subscription, name='cancel_subscription'),
 ]
