@@ -1,8 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import * as Font from 'expo-font';
-import { View, Text } from 'react-native';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -13,33 +10,7 @@ import SubscriptionScreen from './screens/SubscriptionScreen';
 
 const Stack = createStackNavigator();
 
-const App = () => {
-  const [fontsLoaded, setFontsLoaded] = useState(false);
-
-  const loadFonts = async () => {
-    try {
-      await Font.loadAsync({
-        Inter: require('./assets/fonts/Inter-Regular.ttf'),
-      });
-      setFontsLoaded(true);
-    } catch (error) {
-      console.log('Font Loading Error:', error);
-      setFontsLoaded(true); // Proceed even if font fails
-    }
-  };
-
-  useEffect(() => {
-    loadFonts();
-  }, []);
-
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading fonts...</Text>
-      </View>
-    );
-  }
-
+export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login">
@@ -53,6 +24,4 @@ const App = () => {
       </Stack.Navigator>
     </NavigationContainer>
   );
-};
-
-export default App;
+}
