@@ -34,9 +34,14 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:19000",
-    "http://localhost:8081",
-    "http://localhost:8082",
+    "http://localhost:8081",  # Frontend port
+    "https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev",  # Backend Codespaces URL
+    "https://super-palm-tree-69499prjx6rp24xg7-8081.app.github.dev",  # Frontend Codespaces URL
+    "https://*.github.dev",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev",  # Backend Codespaces URL
     "https://*.github.dev",
 ]
 
