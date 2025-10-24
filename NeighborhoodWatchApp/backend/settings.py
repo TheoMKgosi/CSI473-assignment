@@ -41,6 +41,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://localhost:8000",  # Add for local testing
     "https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev",  # Backend Codespaces URL
     "https://*.github.dev",
 ]
