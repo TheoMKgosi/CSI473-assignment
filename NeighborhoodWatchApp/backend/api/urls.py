@@ -2,11 +2,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('login/', views.login, name='login'),
-    path('signup/', views.signup, name='signup'),
-    path('forum/', views.create_post, name='create_post'),
-    path('patrol-stats/', views.get_stats, name='get_stats'),
-    path('panic/', views.trigger_panic, name='panic'),
-    path('pay-subscription/', views.pay_subscription, name='pay'),
-    path('cancel-subscription/', views.cancel_subscription, name='cancel'),
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('signup/', views.SignupView.as_view(), name='signup'),
+    path('forum/', views.ForumPostView.as_view(), name='forum'),
+    path('patrol-stats/', views.PatrolStatView.as_view(), name='patrol-stats'),
+    path('panic/', views.EmergencyAlertView.as_view(), name='panic'),
+    path('pay-subscription/', views.PaySubscriptionView.as_view(), name='pay-subscription'),
+    path('cancel-subscription/', views.CancelSubscriptionView.as_view(), name='cancel-subscription'),
 ]
