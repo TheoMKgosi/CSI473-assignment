@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as Font from 'expo-font';
-import { AppLoading } from 'expo';
+import { View, Text } from 'react-native';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -17,10 +17,14 @@ const App = () => {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   const loadFonts = async () => {
-    await Font.loadAsync({
-      'Inter': require('./assets/fonts/Inter-Regular.ttf'),
-    });
-    setFontsLoaded(true);
+    try {
+      await Font.loadAsync({
+        Inter: require('./assets/fonts/Inter_18pt-Regular.ttf'),
+      });
+      setFontsLoaded(true);
+    } catch (error) {
+      console.log('Font Loading Error:', error);
+    }
   };
 
   useEffect(() => {
@@ -28,7 +32,7 @@ const App = () => {
   }, []);
 
   if (!fontsLoaded) {
-    return <AppLoading />;
+    return <View><Text>Loading fonts...</Text></View>;
   }
 
   return (
