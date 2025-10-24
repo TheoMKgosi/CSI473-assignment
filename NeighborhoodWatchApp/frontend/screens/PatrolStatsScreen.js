@@ -2,22 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 
-const PatrolStatsScreen = () => {
+const PatrolStatsScreen = ({ route }) => {
+  const { token } = route.params || {};
   const [stats, setStats] = useState({ completed: 0, response_time: '0 min' });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get('https://<your-codespace>.github.dev:8000/api/patrol-stats/', {
-          headers: { Authorization: 'Token <your-token>' }
-        });
+        const response = await axios.get(
+          'https://super-palm-tree-69499prjx6rp24xg7.github.dev:8000/api/patrol-stats/',
+          { headers: { Authorization: `Token ${token}` } }
+        );
         setStats(response.data);
       } catch (error) {
         Alert.alert('Error', 'Failed to fetch patrol stats');
       }
     };
-    fetchStats();
-  }, []);
+    if (token) fetchStats();
+  }, [token]);
 
   return (
     <View style={styles.container}>
@@ -36,31 +38,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: 'Inter',
+    fontSize: 28,
+    fontWeight: '400',
+    color: '#000',
     marginBottom: 20,
-    color: '#333',
   },
   statsContainer: {
     width: '100%',
     padding: 20,
     backgroundColor: '#fff',
-    borderRadius: 5,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#61a3d2',
+    borderRadius: 10,
   },
   statLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontFamily: 'Inter',
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000',
     marginVertical: 5,
   },
   statValue: {
-    fontSize: 16,
-    color: '#666',
+    fontFamily: 'Inter',
+    fontSize: 14,
+    color: '#000',
     marginBottom: 10,
   },
 });

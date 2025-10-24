@@ -1,18 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert, Image } from 'react-native';
 import axios from 'axios';
 
-const ForumScreen = () => {
+const ForumScreen = ({ route, navigation }) => {
+  const { token } = route.params || {};
   const [postContent, setPostContent] = useState('');
   const [posts, setPosts] = useState([]);
 
-  // Fetch posts (placeholder, to be implemented once backend is fixed)
   useEffect(() => {
-    // Replace with actual API call
-    // axios.get('https://<your-codespace>.github.dev:8000/api/forum/', {
-    //   headers: { Authorization: `Token <your-token>` }
-    // }).then(response => setPosts(response.data));
-  }, []);
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get(
+          'https://super-palm-tree-69499prjx6rp24xg7.github.dev:8000/api/forum/',
+          { headers: { Authorization: `Token ${token}` } }
+        );
+        setPosts(response.data);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to fetch posts');
+      }
+    };
+    if (token) fetchPosts();
+  }, [token]);
 
   const handleCreatePost = async () => {
     if (!postContent.trim()) {
@@ -21,11 +29,11 @@ const ForumScreen = () => {
     }
     try {
       const response = await axios.post(
-        'https://<your-codespace>.github.dev:8000/api/forum/',
+        'https://super-palm-tree-69499prjx6rp24xg7.github.dev:8000/api/forum/',
         { content: postContent },
-        { headers: { Authorization: 'Token <your-token>' } }
+        { headers: { Authorization: `Token ${token}` } }
       );
-      setPosts([...posts, response.data]);
+      setPosts([response.data, ...posts]);
       setPostContent('');
       Alert.alert('Success', 'Post created successfully');
     } catch (error) {
@@ -34,15 +42,27 @@ const ForumScreen = () => {
   };
 
   const renderPost = ({ item }) => (
-    <View style={styles.postContainer}>
-      <Text style={styles.postContent}>{item.content}</Text>
-      <Text style={styles.postMeta}>Posted at: {item.created_at}</Text>
+    <View style={styles.rectangle22}>
+      <View style={styles.rectangle22Inner} />
+      <Text style={styles.user0101}>{item.user?.email || 'User0101'}</Text>
+      <View style={styles.rectangle31}>
+        <Image source={require('../../assets/user-icon.png')} style={styles.rectangle31Inner} />
+      </View>
+      <View style={styles.component15}>
+        <Image source={require('../../assets/like-icon.png')} style={styles.mdiLike} />
+        <Text style={styles.like}>Like ({item.likes || 0})</Text>
+      </View>
+      <View style={styles.component16}>
+        <Image source={require('../../assets/comment-icon.png')} style={styles.iconamoonComment} />
+        <Text style={styles.comment}>Comment</Text>
+      </View>
+      <Text style={styles.heyEveryone}>{item.content}</Text>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Community Forum</Text>
+    <View style={styles.communityForum}>
+      <Text style={styles.communityForumTitle}>Community Forum</Text>
       <TextInput
         style={styles.input}
         placeholder="Write a post..."
@@ -64,57 +84,116 @@ const ForumScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  communityForum: {
     flex: 1,
+    backgroundColor: '#fff',
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  communityForumTitle: {
+    fontFamily: 'Inter',
+    fontSize: 22,
+    fontWeight: '400',
+    color: '#000',
     marginBottom: 20,
-    color: '#333',
   },
   input: {
     width: '100%',
     padding: 10,
     marginVertical: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    backgroundColor: '#d9d9d9',
     borderRadius: 5,
-    backgroundColor: '#fff',
     minHeight: 100,
+    fontFamily: 'Inter',
+    fontSize: 12,
   },
   button: {
     width: '100%',
     padding: 15,
-    backgroundColor: '#007bff',
-    borderRadius: 5,
+    backgroundColor: '#61a3d2',
+    borderRadius: 8,
     alignItems: 'center',
     marginVertical: 10,
   },
   buttonText: {
     color: '#fff',
+    fontFamily: 'Inter',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '400',
   },
   postList: {
     flex: 1,
     width: '100%',
   },
-  postContainer: {
+  rectangle22: {
+    width: '100%',
     padding: 10,
+    marginVertical: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
+  },
+  rectangle22Inner: {
+    backgroundColor: '#d9d9d9',
+    width: '100%',
+    height: 128,
+    borderRadius: 5,
+  },
+  user0101: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000',
+    marginTop: 5,
+  },
+  rectangle31: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
     marginVertical: 5,
   },
-  postContent: {
-    fontSize: 16,
-    color: '#333',
+  rectangle31Inner: {
+    backgroundColor: '#d3d3d3',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
-  postMeta: {
+  component15: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginVertical: 5,
+  },
+  mdiLike: {
+    width: 24,
+    height: 24,
+  },
+  like: {
+    fontFamily: 'Inter',
     fontSize: 12,
-    color: '#666',
+    fontWeight: '400',
+    color: '#000',
+  },
+  component16: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginVertical: 5,
+  },
+  iconamoonComment: {
+    width: 24,
+    height: 24,
+  },
+  comment: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000',
+  },
+  heyEveryone: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000',
     marginTop: 5,
   },
 });

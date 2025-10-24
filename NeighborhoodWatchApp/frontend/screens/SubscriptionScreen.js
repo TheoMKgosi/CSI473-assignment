@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import axios from 'axios';
 
-const SubscriptionScreen = () => {
+const SubscriptionScreen = ({ route }) => {
+  const { token } = route.params || {};
   const [amount, setAmount] = useState('');
 
   const handlePaySubscription = async () => {
@@ -12,16 +13,12 @@ const SubscriptionScreen = () => {
     }
     try {
       const response = await axios.post(
-        'https://<your-codespace>.github.dev:8000/api/pay-subscription/',
-        { amount },
-        { headers: { Authorization: 'Token <your-token>' } }
+        'https://super-palm-tree-69499prjx6rp24xg7.github.dev:8000/api/pay-subscription/',
+        { payment_date: new Date().toISOString().split('T')[0], amount },
+        { headers: { Authorization: `Token ${token}` } }
       );
-      if (response.data.success) {
-        Alert.alert('Success', 'Subscription payment processed');
-        setAmount('');
-      } else {
-        Alert.alert('Error', 'Failed to process payment');
-      }
+      Alert.alert('Success', 'Subscription payment processed');
+      setAmount('');
     } catch (error) {
       Alert.alert('Error', 'Failed to process payment');
     }
@@ -30,23 +27,19 @@ const SubscriptionScreen = () => {
   const handleCancelSubscription = async () => {
     try {
       const response = await axios.post(
-        'https://<your-codespace>.github.dev:8000/api/cancel-subscription/',
+        'https://super-palm-tree-69499prjx6rp24xg7.github.dev:8000/api/cancel-subscription/',
         {},
-        { headers: { Authorization: 'Token <your-token>' } }
+        { headers: { Authorization: `Token ${token}` } }
       );
-      if (response.data.success) {
-        Alert.alert('Success', 'Subscription cancelled');
-      } else {
-        Alert.alert('Error', 'Failed to cancel subscription');
-      }
+      Alert.alert('Success', 'Subscription cancelled');
     } catch (error) {
       Alert.alert('Error', 'Failed to cancel subscription');
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Manage Subscription</Text>
+    <View style={styles.subscription}>
+      <Text style={styles.subscriptionTitle}>Manage Subscription</Text>
       <TextInput
         style={styles.input}
         placeholder="Enter payment amount"
@@ -54,59 +47,96 @@ const SubscriptionScreen = () => {
         onChangeText={setAmount}
         keyboardType="numeric"
       />
-      <TouchableOpacity style={styles.button} onPress={handlePaySubscription}>
-        <Text style={styles.buttonText}>Pay Subscription</Text>
+      <TouchableOpacity style={styles.rectangle19} onPress={handlePaySubscription}>
+        <Image source={require('../../assets/money-icon.png')} style={styles.carbonMoney} />
+        <Text style={styles.pay}>Pay</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.cancelButton} onPress={handleCancelSubscription}>
-        <Text style={styles.buttonText}>Cancel Subscription</Text>
+      <TouchableOpacity style={styles.rectangle20} onPress={handleCancelSubscription}>
+        <View style={styles.iconoirTools}>
+          <Image source={require('../../assets/tools-icon.png')} style={styles.group} />
+        </View>
+        <Text style={styles.manageSubscription}>Cancel Subscription</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  subscription: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  subscriptionTitle: {
+    fontFamily: 'Inter',
+    fontSize: 28,
+    fontWeight: '400',
+    color: '#000',
     marginBottom: 20,
-    color: '#333',
   },
   input: {
     width: '100%',
     padding: 10,
     marginVertical: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    borderColor: '#61a3d2',
+    borderRadius: 10,
     backgroundColor: '#fff',
+    fontFamily: 'Inter',
+    fontSize: 14,
   },
-  button: {
-    width: '100%',
-    padding: 15,
-    backgroundColor: '#007bff',
-    borderRadius: 5,
+  rectangle19: {
+    flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#61a3d2',
+    borderRadius: 10,
+    padding: 10,
+    width: 129,
+    height: 104,
     marginVertical: 10,
   },
-  cancelButton: {
-    width: '100%',
-    padding: 15,
-    backgroundColor: '#dc3545',
-    borderRadius: 5,
+  carbonMoney: {
+    width: 50,
+    height: 50,
+  },
+  pay: {
+    fontFamily: 'Inter',
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000',
+    marginLeft: 10,
+  },
+  rectangle20: {
+    flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#61a3d2',
+    borderRadius: 10,
+    padding: 10,
+    width: 129,
+    height: 104,
     marginVertical: 10,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  iconoirTools: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 50,
+    height: 50,
+    padding: 5,
+  },
+  group: {
+    width: 40,
+    height: 40,
+  },
+  manageSubscription: {
+    fontFamily: 'Inter',
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000',
+    marginLeft: 10,
   },
 });
 

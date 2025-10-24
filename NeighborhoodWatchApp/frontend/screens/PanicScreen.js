@@ -2,19 +2,17 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 
-const PanicScreen = () => {
+const PanicScreen = ({ route }) => {
+  const { token } = route.params || {};
+
   const handlePanic = async () => {
     try {
       const response = await axios.post(
-        'https://<your-codespace>.github.dev:8000/api/panic/',
+        'https://super-palm-tree-69499prjx6rp24xg7.github.dev:8000/api/panic/',
         {},
-        { headers: { Authorization: 'Token <your-token>' } }
+        { headers: { Authorization: `Token ${token}` } }
       );
-      if (response.data.success) {
-        Alert.alert('Success', 'Emergency alert triggered!');
-      } else {
-        Alert.alert('Error', 'Failed to trigger alert');
-      }
+      Alert.alert('Success', 'Emergency alert triggered!');
     } catch (error) {
       Alert.alert('Error', 'Failed to trigger alert');
     }
@@ -39,13 +37,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: 'Inter',
+    fontSize: 28,
+    fontWeight: '400',
+    color: '#000',
     marginBottom: 20,
-    color: '#333',
   },
   panicButton: {
     width: '100%',
@@ -57,12 +56,14 @@ const styles = StyleSheet.create({
   },
   panicButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'Inter',
+    fontSize: 14,
+    fontWeight: '400',
   },
   infoText: {
-    fontSize: 16,
-    color: '#666',
+    fontFamily: 'Inter',
+    fontSize: 14,
+    color: '#000',
     textAlign: 'center',
   },
 });
