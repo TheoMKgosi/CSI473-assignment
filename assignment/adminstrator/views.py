@@ -6,6 +6,18 @@ from django.contrib.auth.models import User
 from django.db.models import Count, Avg, Sum, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
+import qrcode
+import base64
+from io import BytesIO
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
 from security.models import SecurityProfile
 from members.models import MemberProfile
 from .models import House, Subscription, SecurityCompliance
@@ -361,3 +373,77 @@ def administrator_logout(request):
     logout(request)
     messages.info(request, 'You have been logged out.')
     return redirect('adminstrator:administrator_login')
+
+@login_required
+def house_detail(request, house_id):
+    """Display house details"""
+    house = get_object_or_404(House, id=house_id)
+    return render(request, 'adminstrator/house_detail.html', {'house': house})
+
+@csrf_exempt
+@require_POST
+@login_required
+def house_create_api(request):
+    try:
+        data = json.loads(request.body)
+        owner_id = data.get('owner')
+        address = data.get('address')
+        house_number = data.get('house_number')
+        bedrooms = data.get('bedrooms', 1)
+        bathrooms = data.get('bathrooms', 1)
+        square_footage = data.get('square_footage')
+        property_type = data.get('property_type', 'house')
+        is_occupied = data.get('is_occupied', True)
+
+        owner = User.objects.get(id=owner_id)
+        house = House.objects.create(
+            owner=owner,
+            address=address,
+            house_number=house_number,
+            bedrooms=bedrooms,
+            bathrooms=bathrooms,
+            square_footage=square_footage,
+            property_type=property_type,
+            is_occupied=is_occupied,
+        )
+
+        # Generate QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(f"http://localhost:8000/adminstrator/house/{house.id}/")
+        qr.make(fit=True)
+
+        # Generate SVG QR code (doesn't require PIL)
+        try:
+            from qrcode.image.svg import SvgImage
+            img = qr.make_image(image_factory=SvgImage)
+            svg_data = img.to_string()
+            qr_code_base64 = base64.b64encode(svg_data).decode('utf-8')
+            house.qr_code_data = f"data:image/svg+xml;base64,{qr_code_base64}"
+        except Exception as e:
+            # Fallback: try PNG with PIL if available
+            try:
+                img = qr.make_image(fill='black', back_color='white')
+                buffer = BytesIO()
+                img.save(buffer, format='PNG')
+                buffer.seek(0)
+                qr_code_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                house.qr_code_data = f"data:image/png;base64,{qr_code_base64}"
+            except Exception as e2:
+                # Last fallback: store the URL as plain text
+                house.qr_code_data = f"http://localhost:8000/adminstrator/house/{house.id}/"
+        house.save()
+
+        return JsonResponse({
+            'id': house.id,
+            'address': house.address,
+            'owner': house.owner.username,
+            'date_registered': house.date_registered.isoformat(),
+            'qr_code_data': house.qr_code_data,
+        }, status=201)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

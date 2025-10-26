@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class AdministratorProfile(models.Model):
     """Administrator profile extending Django's User model"""
@@ -22,6 +23,8 @@ class House(models.Model):
     """House/Property management model"""
     address = models.CharField(max_length=255)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_houses')
+    date_registered = models.DateTimeField(default=timezone.now)
+    qr_code_data = models.TextField(blank=True, null=True)  # Store QR code data as base64
     house_number = models.CharField(max_length=20, unique=True)
     bedrooms = models.PositiveIntegerField(default=1)
     bathrooms = models.PositiveIntegerField(default=1)
