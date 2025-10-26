@@ -231,6 +231,47 @@ def security_compliance_dashboard(request):
     return render(request, 'adminstrator/security_compliance.html', context)
 
 @login_required
+def incidents_dashboard(request):
+    """Incidents dashboard showing all reported incidents"""
+    # Get all security compliance records that have incidents
+    incident_records = SecurityCompliance.objects.filter(
+        incidents_reported__gt=0
+    ).order_by('-date')
+
+    # Calculate statistics
+    total_incidents = incident_records.aggregate(
+        total=Sum('incidents_reported')
+    )['total'] or 0
+
+    # Group incidents by date for trend analysis
+    incidents_by_date = incident_records.values('date').annotate(
+        count=Sum('incidents_reported')
+    ).order_by('-date')[:30]  # Last 30 days
+
+    # Get recent incidents (last 10)
+    recent_incidents = incident_records[:10]
+
+    # Prepare incident details
+    incident_details = []
+    for record in recent_incidents:
+        incident_details.append({
+            'security_guard': record.security_guard,
+            'date': record.date,
+            'incidents_reported': record.incidents_reported,
+            'location': ', '.join([house.address for house in record.scanned_houses.all()]) if record.scanned_houses.exists() else 'Not specified',
+            'notes': record.notes,
+            'compliance_score': record.compliance_score,
+        })
+
+    context = {
+        'total_incidents': total_incidents,
+        'incident_records': incident_records.count(),
+        'incidents_by_date': list(incidents_by_date),
+        'recent_incidents': incident_details,
+    }
+    return render(request, 'adminstrator/incidents.html', context)
+
+@login_required
 def user_management(request):
     """User management dashboard with filtering and search"""
     users = User.objects.all()

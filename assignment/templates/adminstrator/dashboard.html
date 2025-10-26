@@ -1,194 +1,180 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administrator Dashboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .welcome { margin-bottom: 20px; }
-        .logout-btn { padding: 10px 20px; background: #dc3545; color: white; border: none; cursor: pointer; text-decoration: none; }
-        .section { margin-bottom: 30px; }
-        .security-list { margin-top: 15px; }
-        .security-item { background: #f8f9fa; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #007bff; }
-        .security-item.pending { border-left-color: #ffc107; }
-        .security-item.approved { border-left-color: #28a745; }
-        .security-item.rejected { border-left-color: #dc3545; }
-        .action-buttons { margin-top: 10px; }
-        .btn { padding: 5px 15px; margin-right: 10px; border: none; cursor: pointer; text-decoration: none; border-radius: 3px; }
-        .btn-approve { background: #28a745; color: white; }
-        .btn-reject { background: #dc3545; color: white; }
-        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
-        .stat-box { background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: center; min-width: 120px; }
-        .stat-number { font-size: 24px; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <h1>Administrator Dashboard</h1>
-    <div class="welcome">
-        <h2>Welcome, {{ user.get_full_name|default:user.username }}!</h2>
-        <p>You are logged in as an administrator.</p>
+{% extends 'adminstrator/base.html' %}
+{% block title %}Administrator Dashboard{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1>Administrator Dashboard</h1>
+        <p>Welcome, {{ user.get_full_name|default:user.username }}! You are logged in as an administrator.</p>
     </div>
 
-    <div class="stats">
-        <div class="stat-box">
+    <div class="stats-grid">
+        <div class="stat-card">
             <div class="stat-number">{{ pending_security_count }}</div>
-            <div>Pending Security</div>
+            <div class="stat-label">Pending Security</div>
         </div>
-        <div class="stat-box">
+        <div class="stat-card">
             <div class="stat-number">{{ pending_members_count }}</div>
-            <div>Pending Members</div>
+            <div class="stat-label">Pending Members</div>
         </div>
-        <div class="stat-box">
+        <div class="stat-card">
             <div class="stat-number">{{ approved_security_count }}</div>
-            <div>Approved Security</div>
+            <div class="stat-label">Approved Security</div>
         </div>
-        <div class="stat-box">
+        <div class="stat-card">
             <div class="stat-number">{{ approved_members_count }}</div>
-            <div>Approved Members</div>
+            <div class="stat-label">Approved Members</div>
         </div>
     </div>
 
-    <div class="section">
-        <h3>Management Dashboards</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
-            <a href="{% url 'adminstrator:house_management' %}" style="text-decoration: none; color: inherit;">
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #007bff; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    <h4 style="margin: 0 0 10px 0; color: #007bff;">🏠 House Management</h4>
-                    <p style="margin: 0; color: #666; font-size: 0.9em;">View property statistics, occupancy rates, and manage house information.</p>
-                </div>
-            </a>
-            
-            <a href="{% url 'adminstrator:subscription_statistics' %}" style="text-decoration: none; color: inherit;">
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #28a745; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    <h4 style="margin: 0 0 10px 0; color: #28a745;">💳 Subscription Statistics</h4>
-                    <p style="margin: 0; color: #666; font-size: 0.9em;">Monitor subscription revenue, active subscriptions, and payment analytics.</p>
-                </div>
-            </a>
-            
-            <a href="{% url 'adminstrator:security_compliance' %}" style="text-decoration: none; color: inherit;">
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #ffc107; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    <h4 style="margin: 0 0 10px 0; color: #ffc107;">🛡️ Security Compliance</h4>
-                    <p style="margin: 0; color: #666; font-size: 0.9em;">Track security guard performance and ensure 60%+ compliance requirements.</p>
-                </div>
-            </a>
-            
-            <a href="{% url 'adminstrator:user_management' %}" style="text-decoration: none; color: inherit;">
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #17a2b8; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    <h4 style="margin: 0 0 10px 0; color: #17a2b8;">👥 User Management</h4>
-                    <p style="margin: 0; color: #666; font-size: 0.9em;">Manage all system users, roles, permissions, and account status.</p>
-                </div>
-            </a>
-            
-            <a href="{% url 'adminstrator:create_administrator' %}" style="text-decoration: none; color: inherit;">
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #6f42c1; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                    <h4 style="margin: 0 0 10px 0; color: #6f42c1;">👔 Create Administrator</h4>
-                    <p style="margin: 0; color: #666; font-size: 0.9em;">Create new administrator accounts (admin-only access).</p>
-                </div>
-            </a>
+    <div class="card">
+        <div class="card-header">
+            <h3>Quick Actions</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <a href="{% url 'adminstrator:user_management' %}" class="btn btn-primary" style="text-align: center; padding: 15px;">
+                    👥 Manage Users
+                </a>
+                <a href="{% url 'adminstrator:house_management' %}" class="btn btn-success" style="text-align: center; padding: 15px;">
+                    🏠 Manage Houses
+                </a>
+                <a href="{% url 'adminstrator:security_compliance' %}" class="btn btn-warning" style="text-align: center; padding: 15px;">
+                    🛡️ View Patrol Reports
+                </a>
+                <a href="{% url 'adminstrator:subscription_statistics' %}" class="btn btn-info" style="text-align: center; padding: 15px;">
+                    💰 View Finance
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="section">
-        <h3>Pending Security Guard Applications</h3>
-        {% if pending_security %}
-            <div class="security-list">
-                {% for security in pending_security %}
-                    <div class="security-item pending">
-                        <h4>{{ security.user.get_full_name|default:security.user.username }}</h4>
-                        <p><strong>Username:</strong> {{ security.user.username }}</p>
-                        <p><strong>Email:</strong> {{ security.user.email }}</p>
-                        <p><strong>Employee ID:</strong> {{ security.employee_id }}</p>
-                        <p><strong>Phone:</strong> {{ security.phone_number|default:'Not provided' }}</p>
-                        <p><strong>Address:</strong> {{ security.address|default:'Not provided' }}</p>
-                        <div class="action-buttons">
-                            <a href="{% url 'adminstrator:approve_security' security.id %}" class="btn btn-approve">Approve</a>
-                            <a href="{% url 'adminstrator:reject_security' security.id %}" class="btn btn-reject">Reject</a>
+    <div class="card">
+        <div class="card-header">
+            <h3>Pending Security Guard Applications</h3>
+        </div>
+        <div class="card-body">
+            {% if pending_security %}
+                <div style="display: grid; gap: 15px;">
+                    {% for security in pending_security %}
+                        <div style="border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; border-left: 4px solid #ffc107;">
+                            <h4 style="margin: 0 0 10px 0; color: #333;">{{ security.user.get_full_name|default:security.user.username }}</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                                <div><strong>Username:</strong> {{ security.user.username }}</div>
+                                <div><strong>Email:</strong> {{ security.user.email }}</div>
+                                <div><strong>Employee ID:</strong> {{ security.employee_id }}</div>
+                                <div><strong>Phone:</strong> {{ security.phone_number|default:'Not provided' }}</div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <a href="{% url 'adminstrator:approve_security' security.id %}" class="btn btn-success">Approve</a>
+                                <a href="{% url 'adminstrator:reject_security' security.id %}" class="btn btn-danger">Reject</a>
+                            </div>
                         </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p>No pending security applications.</p>
-        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #666; font-style: italic;">No pending security applications.</p>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="section">
-        <h3>Pending Member Applications</h3>
-        {% if pending_members %}
-            <div class="security-list">
-                {% for member in pending_members %}
-                    <div class="security-item pending">
-                        <h4>{{ member.user.get_full_name|default:member.user.username }}</h4>
-                        <p><strong>Username:</strong> {{ member.user.username }}</p>
-                        <p><strong>Email:</strong> {{ member.user.email }}</p>
-                        <p><strong>Phone:</strong> {{ member.phone_number|default:'Not provided' }}</p>
-                        <p><strong>Address:</strong> {{ member.address|default:'Not provided' }}</p>
-                        <div class="action-buttons">
-                            <a href="{% url 'adminstrator:approve_member' member.id %}" class="btn btn-approve">Approve</a>
-                            <a href="{% url 'adminstrator:reject_member' member.id %}" class="btn btn-reject">Reject</a>
+    <div class="card">
+        <div class="card-header">
+            <h3>Pending Member Applications</h3>
+        </div>
+        <div class="card-body">
+            {% if pending_members %}
+                <div style="display: grid; gap: 15px;">
+                    {% for member in pending_members %}
+                        <div style="border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; border-left: 4px solid #ffc107;">
+                            <h4 style="margin: 0 0 10px 0; color: #333;">{{ member.user.get_full_name|default:member.user.username }}</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                                <div><strong>Username:</strong> {{ member.user.username }}</div>
+                                <div><strong>Email:</strong> {{ member.user.email }}</div>
+                                <div><strong>Phone:</strong> {{ member.phone_number|default:'Not provided' }}</div>
+                                <div><strong>Address:</strong> {{ member.address|default:'Not provided' }}</div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <a href="{% url 'adminstrator:approve_member' member.id %}" class="btn btn-success">Approve</a>
+                                <a href="{% url 'adminstrator:reject_member' member.id %}" class="btn btn-danger">Reject</a>
+                            </div>
                         </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #666; font-style: italic;">No pending member applications.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Approved Security Guards</h3>
+        </div>
+        <div class="card-body">
+            {% if approved_security %}
+                <div style="display: grid; gap: 10px;">
+                    {% for security in approved_security %}
+                        <div style="border: 1px solid #dee2e6; border-radius: 5px; padding: 12px; border-left: 4px solid #28a745; background: #f8f9fa;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong>{{ security.user.get_full_name|default:security.user.username }}</strong>
+                                    <span style="color: #666; margin-left: 10px;">{{ security.user.username }} • ID: {{ security.employee_id }}</span>
+                                </div>
+                                <span class="badge badge-active">Approved</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #666; font-style: italic;">No approved security guards.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Rejected Applications</h3>
+        </div>
+        <div class="card-body">
+            {% if rejected_security %}
+                <div style="display: grid; gap: 10px;">
+                    {% for security in rejected_security %}
+                        <div style="border: 1px solid #dee2e6; border-radius: 5px; padding: 12px; border-left: 4px solid #dc3545; background: #f8f9fa;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong>{{ security.user.get_full_name|default:security.user.username }}</strong>
+                                    <span style="color: #666; margin-left: 10px;">{{ security.user.username }} • ID: {{ security.employee_id }}</span>
+                                </div>
+                                <span class="badge badge-inactive">Rejected</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #666; font-style: italic;">No rejected applications.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Your Profile Information</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div><strong>Username:</strong> {{ user.username }}</div>
+                <div><strong>Email:</strong> {{ user.email }}</div>
+                <div><strong>Full Name:</strong> {{ user.get_full_name }}</div>
+                {% if user.administrator_profile.employee_id %}
+                    <div><strong>Employee ID:</strong> {{ user.administrator_profile.employee_id }}</div>
+                {% endif %}
+                {% if user.administrator_profile.department %}
+                    <div><strong>Department:</strong> {{ user.administrator_profile.department }}</div>
+                {% endif %}
+                {% if user.administrator_profile.phone_number %}
+                    <div><strong>Phone:</strong> {{ user.administrator_profile.phone_number }}</div>
+                {% endif %}
             </div>
-        {% else %}
-            <p>No pending member applications.</p>
-        {% endif %}
+        </div>
     </div>
-
-    <div class="section">
-        <h3>Approved Security Guards</h3>
-        {% if approved_security %}
-            <div class="security-list">
-                {% for security in approved_security %}
-                    <div class="security-item approved">
-                        <h4>{{ security.user.get_full_name|default:security.user.username }}</h4>
-                        <p><strong>Username:</strong> {{ security.user.username }}</p>
-                        <p><strong>Email:</strong> {{ security.user.email }}</p>
-                        <p><strong>Employee ID:</strong> {{ security.employee_id }}</p>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p>No approved security guards.</p>
-        {% endif %}
-    </div>
-
-    <div class="section">
-        <h3>Rejected Applications</h3>
-        {% if rejected_security %}
-            <div class="security-list">
-                {% for security in rejected_security %}
-                    <div class="security-item rejected">
-                        <h4>{{ security.user.get_full_name|default:security.user.username }}</h4>
-                        <p><strong>Username:</strong> {{ security.user.username }}</p>
-                        <p><strong>Email:</strong> {{ security.user.email }}</p>
-                        <p><strong>Employee ID:</strong> {{ security.employee_id }}</p>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p>No rejected applications.</p>
-        {% endif %}
-    </div>
-
-    <div>
-        <h3>Your Profile Information:</h3>
-        <p><strong>Username:</strong> {{ user.username }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Full Name:</strong> {{ user.get_full_name }}</p>
-        {% if user.administrator_profile.employee_id %}
-            <p><strong>Employee ID:</strong> {{ user.administrator_profile.employee_id }}</p>
-        {% endif %}
-        {% if user.administrator_profile.department %}
-            <p><strong>Department:</strong> {{ user.administrator_profile.department }}</p>
-        {% endif %}
-        {% if user.administrator_profile.phone_number %}
-            <p><strong>Phone:</strong> {{ user.administrator_profile.phone_number }}</p>
-        {% endif %}
-    </div>
-
-    <br>
-    <a href="{% url 'adminstrator:administrator_logout' %}" class="logout-btn">Logout</a>
-</body>
-</html>
+{% endblock %}

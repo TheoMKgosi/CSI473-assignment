@@ -21,4 +21,5 @@ urlpatterns = [
     path('reject-member/<int:member_id>/', views.reject_member, name='reject_member'),
     path('house/<int:house_id>/', views.house_detail, name='house_detail'),
     path('api/houses/', views.house_create_api, name='house_create_api'),
+    path('incidents/', views.incidents_dashboard, name='incidents'),
 ]
