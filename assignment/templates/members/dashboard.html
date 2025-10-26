@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .welcome { margin-bottom: 20px; }
+        .logout-btn { padding: 10px 20px; background: #dc3545; color: white; border: none; cursor: pointer; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h1>Member Dashboard</h1>
+    <div class="welcome">
+        <h2>Welcome, {{ user.get_full_name|default:user.username }}!</h2>
+        <p>You are logged in as a member.</p>
+    </div>
+
+    <div>
+        <h3>Your Profile Information:</h3>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Full Name:</strong> {{ user.get_full_name }}</p>
+        {% if user.member_profile.phone_number %}
+            <p><strong>Phone:</strong> {{ user.member_profile.phone_number }}</p>
+        {% endif %}
+        {% if user.member_profile.address %}
+            <p><strong>Address:</strong> {{ user.member_profile.address }}</p>
+        {% endif %}
+    </div>
+
+    <br>
+    <a href="{% url 'members:member_logout' %}" class="logout-btn">Logout</a>
+</body>
+</html>

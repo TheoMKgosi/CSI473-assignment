@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Guard Compliance</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .stat-number { font-size: 2.5em; font-weight: bold; margin-bottom: 10px; }
+        .stat-label { color: #666; font-size: 1.1em; }
+        .compliance-good { color: #28a745; }
+        .compliance-warning { color: #ffc107; }
+        .compliance-danger { color: #dc3545; }
+        .compliance-list { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .compliance-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .compliance-item:last-child { border-bottom: none; }
+        .guard-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .guard-name { font-weight: bold; font-size: 1.1em; }
+        .compliance-score { font-size: 1.2em; font-weight: bold; padding: 5px 15px; border-radius: 20px; }
+        .score-high { background: #d4edda; color: #155724; }
+        .score-medium { background: #fff3cd; color: #856404; }
+        .score-low { background: #f8d7da; color: #721c24; }
+        .compliance-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 10px; }
+        .detail-item { text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+        .detail-value { font-size: 1.3em; font-weight: bold; color: #007bff; }
+        .detail-label { font-size: 0.9em; color: #666; margin-top: 5px; }
+        .progress-bar { width: 100%; height: 25px; background: #e9ecef; border-radius: 12px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .progress-high { background: linear-gradient(90deg, #28a745, #20c997); }
+        .progress-medium { background: linear-gradient(90deg, #ffc107, #fd7e14); }
+        .progress-low { background: linear-gradient(90deg, #dc3545, #c82333); }
+        .alert-box { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .back-btn { display: inline-block; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; margin-bottom: 20px; }
+        .requirement-badge { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <a href="{% url 'adminstrator:administrator_dashboard' %}" class="back-btn">← Back to Dashboard</a>
+    
+    <div class="header">
+        <h1>Security Guard Compliance</h1>
+        <p>Monitor security guard performance and compliance (60% minimum requirement)</p>
+    </div>
+
+    {% if non_compliant_count > 0 %}
+        <div class="alert-box">
+            <strong>⚠️ Alert:</strong> {{ non_compliant_count }} security guard(s) are below the 60% compliance requirement. Immediate attention required.
+        </div>
+    {% endif %}
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number {{ overall_compliance_class }}">{{ overall_compliance|floatformat:1 }}%</div>
+            <div class="stat-label">Overall Compliance</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number compliance-good">{{ compliant_count }}</div>
+            <div class="stat-label">Meeting 60%+ Requirement</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number {% if non_compliant_count > 0 %}compliance-danger{% else %}compliance-good{% endif %}">{{ non_compliant_count }}</div>
+            <div class="stat-label">Below 60% Requirement</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_guards }}</div>
+            <div class="stat-label">Total Security Guards</div>
+        </div>
+    </div>
+
+    <div class="compliance-list">
+        <h3>Individual Guard Performance <span class="requirement-badge">60% Minimum</span></h3>
+        {% if compliance_records %}
+            {% for record in compliance_records %}
+                <div class="compliance-item">
+                    <div class="guard-info">
+                        <div class="guard-name">{{ record.security_guard.user.get_full_name|default:record.security_guard.user.username }}</div>
+                        <div class="compliance-score {{ record.score_class }}">
+                            {{ record.compliance_score|floatformat:1 }}%
+                            {% if record.is_compliant %}✓{% else %}✗{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill {{ record.progress_class }}" style="width: {{ record.compliance_score }}%;">
+                            {{ record.compliance_score|floatformat:1 }}%
+                        </div>
+                    </div>
+
+                    <div class="compliance-details">
+                        <div class="detail-item">
+                            <div class="detail-value">{{ record.date|date:"M d" }}</div>
+                            <div class="detail-label">Last Report</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-value">{{ record.patrols_completed }}</div>
+                            <div class="detail-label">Patrols Done</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-value">{{ record.tasks_completed }}/{{ record.total_tasks_assigned }}</div>
+                            <div class="detail-label">Tasks Done</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-value">{{ record.incidents_reported }}</div>
+                            <div class="detail-label">Incidents</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-value {% if record.on_time %}compliance-good{% else %}compliance-danger{% endif %}">
+                                {% if record.on_time %}On Time{% else %}Late{% endif %}
+                            </div>
+                            <div class="detail-label">Punctuality</div>
+                        </div>
+                    </div>
+
+                    {% if record.notes %}
+                        <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-style: italic; color: #666;">
+                            <strong>Notes:</strong> {{ record.notes }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No compliance records found. Security guards need to complete their duty reports.</p>
+        {% endif %}
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
+        <h3>Compliance Scoring System</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+            <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                <strong>Task Completion:</strong> Up to 70% of score
+                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Based on tasks completed vs assigned</div>
+            </div>
+            <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                <strong>Punctuality:</strong> 10% bonus
+                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Added if guard arrives on time</div>
+            </div>
+            <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                <strong>Patrol Performance:</strong> Up to 20% bonus
+                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">5% per completed patrol (max 20%)</div>
+            </div>
+            <div style="padding: 15px; background: #d4edda; border-radius: 5px; border: 1px solid #c3e6cb;">
+                <strong>Minimum Requirement:</strong> 60%
+                <div style="font-size: 0.9em; color: #155724; margin-top: 5px;">Guards below this need intervention</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
