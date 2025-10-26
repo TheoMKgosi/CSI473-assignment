@@ -1,0 +1,148 @@
+{% extends 'adminstrator/base.html' %}
+{% block title %}Assign Guard to Route{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1>Assign Guard to Route</h1>
+        <p>Assign security guards to patrol route "{{ route.name }}"</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ available_guards|length }}</div>
+            <div class="stat-label">Available Guards</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ assigned_guards|length }}</div>
+            <div class="stat-label">Currently Assigned</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ route.houses.count }}</div>
+            <div class="stat-label">Houses in Route</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Currently Assigned Guards</h3>
+        </div>
+        <div class="card-body">
+            {% if assigned_guards %}
+                <div style="display: grid; gap: 15px;">
+                    {% for guard in assigned_guards %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #dee2e6; border-radius: 5px; background: #f8f9fa;">
+                            <div>
+                                <strong>{{ guard.user.get_full_name|default:guard.user.username }}</strong>
+                                <br><small style="color: #666;">Employee ID: {{ guard.employee_id }} • Phone: {{ guard.phone_number|default:'Not provided' }}</small>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <span class="badge badge-success">Assigned</span>
+                                <a href="{% url 'adminstrator:unassign_guard_from_route' guard.id %}" class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Are you sure you want to unassign this guard from the route?')">Unassign</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #666; font-style: italic;">No guards currently assigned to this route.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Assign New Guard</h3>
+        </div>
+        <div class="card-body">
+            {% if available_guards %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="id_guard_id">Select Guard to Assign</label>
+                        <select id="id_guard_id" name="guard_id" class="form-control" required>
+                            <option value="">Choose a guard...</option>
+                            {% for guard in available_guards %}
+                                <option value="{{ guard.id }}">
+                                    {{ guard.user.get_full_name|default:guard.user.username }} (ID: {{ guard.employee_id }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button type="submit" class="btn btn-success">Assign Guard</button>
+                        <a href="{% url 'adminstrator:route_management' %}" class="btn btn-secondary">Back to Routes</a>
+                    </div>
+                </form>
+            {% else %}
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <h4>No Available Guards</h4>
+                    <p>All approved security guards are already assigned to routes.</p>
+                    <a href="{% url 'adminstrator:user_management' %}" class="btn btn-primary">Manage Users</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Route Details</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <strong>Route Name:</strong><br>
+                    <span style="color: #666;">{{ route.name }}</span>
+                </div>
+                <div>
+                    <strong>Description:</strong><br>
+                    <span style="color: #666;">{{ route.description|default:'No description' }}</span>
+                </div>
+                <div>
+                    <strong>Houses:</strong><br>
+                    <span style="color: #666;">{{ route.houses.count }} houses</span>
+                </div>
+                <div>
+                    <strong>Created:</strong><br>
+                    <span style="color: #666;">{{ route.created_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+
+            {% if route.houses.exists %}
+                <div style="margin-top: 20px;">
+                    <h5>Houses in this Route:</h5>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-top: 10px;">
+                        {% for house in route.houses.all %}
+                            <div style="padding: 10px; background: #f8f9fa; border-radius: 5px; border-left: 3px solid #007bff;">
+                                <strong>{{ house.house_number }}</strong> - {{ house.address }}
+                                <br><small style="color: #666;">{{ house.get_property_type_display }} • {{ house.bedrooms }} bed, {{ house.bathrooms }} bath</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Assignment Guidelines</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">👤 One Route per Guard</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Each security guard can only be assigned to one patrol route at a time. Unassign them from their current route before assigning a new one.</p>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">✅ Approved Guards Only</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Only security guards with approved status can be assigned to routes. Check the Users section to approve pending applications.</p>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">📊 Performance Tracking</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Assigned guards will have their route completion tracked in the Patrol section. This affects their compliance scores.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

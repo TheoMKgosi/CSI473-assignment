@@ -390,11 +390,11 @@
                         <i>🏠</i> Houses
                     </a>
                 </li>
-                <li>
-                    <a href="{% url 'adminstrator:security_compliance' %}" class="{% if request.resolver_match.url_name == 'security_compliance' %}active{% endif %}">
-                        <i>🛡️</i> Patrol
-                    </a>
-                </li>
+                 <li>
+                     <a href="{% url 'adminstrator:security_compliance' %}" class="{% if request.resolver_match.url_name == 'security_compliance' %}active{% endif %}">
+                         <i>🛡️</i> Patrol & Routes
+                     </a>
+                 </li>
                 <li>
                     <a href="{% url 'adminstrator:subscription_statistics' %}" class="{% if request.resolver_match.url_name == 'subscription_statistics' %}active{% endif %}">
                         <i>💰</i> Finance

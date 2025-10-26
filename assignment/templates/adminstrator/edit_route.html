@@ -1,0 +1,84 @@
+{% extends 'adminstrator/base.html' %}
+{% block title %}Edit Route{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1>Edit Patrol Route</h1>
+        <p>Modify the details and house assignments for "{{ route.name }}"</p>
+    </div>
+
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="id_name">Route Name *</label>
+                    <input type="text" id="id_name" name="name" value="{{ route.name }}" required maxlength="100">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_description">Description</label>
+                    <textarea id="id_description" name="description" rows="3">{{ route.description }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Houses for this Route</label>
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+                        {% if houses %}
+                            {% for house in houses %}
+                                <div style="margin-bottom: 8px;">
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" name="houses" value="{{ house.id }}"
+                                               {% if house.id in selected_houses %}checked{% endif %}
+                                               style="margin-right: 10px;">
+                                        <span>
+                                            <strong>{{ house.house_number }}</strong> - {{ house.address }}
+                                            <br><small style="color: #666;">{{ house.bedrooms }} bed, {{ house.bathrooms }} bath • {{ house.get_property_type_display }}</small>
+                                        </span>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p style="color: #666; font-style: italic;">No houses available.</p>
+                        {% endif %}
+                    </div>
+                    <small style="color: #666; margin-top: 5px; display: block;">
+                        Currently assigned: {{ route.houses.count }} houses
+                    </small>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <button type="submit" class="btn btn-primary">Update Route</button>
+                    <a href="{% url 'adminstrator:route_management' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" style="max-width: 800px; margin: 20px auto;">
+        <div class="card-header">
+            <h3>Route Information</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <strong>Created:</strong><br>
+                    <span style="color: #666;">{{ route.created_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div>
+                    <strong>Last Updated:</strong><br>
+                    <span style="color: #666;">{{ route.updated_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div>
+                    <strong>Created By:</strong><br>
+                    <span style="color: #666;">{{ route.created_by.get_full_name|default:route.created_by.username }}</span>
+                </div>
+                <div>
+                    <strong>Assigned Guards:</strong><br>
+                    <span style="color: #666;">{{ route.assigned_guards.count }} guard(s)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

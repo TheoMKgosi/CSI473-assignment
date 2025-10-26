@@ -1,14 +1,24 @@
 {% extends 'adminstrator/base.html' %}
-{% block title %}Patrol Reports{% endblock %}
+{% block title %}Patrol Management{% endblock %}
 
 {% block content %}
 
     <div class="page-header">
-        <h1>Patrol Reports</h1>
-        <p>Monitor security guard performance and compliance (60% minimum requirement)</p>
+        <h1>Patrol Management</h1>
+        <p>Monitor security guard performance and manage patrol routes</p>
     </div>
 
-    {% if non_compliant_count > 0 %}
+    <!-- Tab Navigation -->
+    <div class="tab-navigation" style="margin-bottom: 20px;">
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="showTab('reports')">📊 Reports</button>
+            <button class="tab-btn" onclick="showTab('routes')">🛣️ Route Management</button>
+        </div>
+    </div>
+
+    <!-- Reports Tab -->
+    <div id="reports-tab" class="tab-content active">
+        {% if non_compliant_count > 0 %}
         <div class="alert alert-danger">
             <strong>⚠️ Alert:</strong> {{ non_compliant_count }} security guard(s) are below the 60% compliance requirement. Immediate attention required.
         </div>
@@ -94,29 +104,538 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h3>Compliance Scoring System</h3>
-        </div>
-        <div class="card-body">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                    <strong>Task Completion:</strong> Up to 70% of score
-                    <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Based on tasks completed vs assigned</div>
-                </div>
-                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                    <strong>Punctuality:</strong> 10% bonus
-                    <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Added if guard arrives on time</div>
-                </div>
-                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                    <strong>Patrol Performance:</strong> Up to 20% bonus
-                    <div style="font-size: 0.9em; color: #666; margin-top: 5px;">5% per completed patrol (max 20%)</div>
-                </div>
-                <div style="padding: 15px; background: #d4edda; border-radius: 5px; border: 1px solid #c3e6cb;">
-                    <strong>Minimum Requirement:</strong> 60%
-                    <div style="font-size: 0.9em; color: #155724; margin-top: 5px;">Guards below this need intervention</div>
+        <div class="card">
+            <div class="card-header">
+                <h3>Compliance Scoring System</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <strong>Task Completion:</strong> Up to 70% of score
+                        <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Based on tasks completed vs assigned</div>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <strong>Punctuality:</strong> 10% bonus
+                        <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Added if guard arrives on time</div>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <strong>Patrol Performance:</strong> Up to 20% bonus
+                        <div style="font-size: 0.9em; color: #666; margin-top: 5px;">5% per completed patrol (max 20%)</div>
+                    </div>
+                    <div style="padding: 15px; background: #d4edda; border-radius: 5px; border: 1px solid #c3e6cb;">
+                        <strong>Minimum Requirement:</strong> 60%
+                        <div style="font-size: 0.9em; color: #155724; margin-top: 5px;">Guards below this need intervention</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Route Management Tab -->
+    <div id="routes-tab" class="tab-content">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_routes }}</div>
+                <div class="stat-label">Total Routes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ assigned_routes }}</div>
+                <div class="stat-label">Assigned Routes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ unassigned_routes }}</div>
+                <div class="stat-label">Unassigned Routes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_guards }}</div>
+                <div class="stat-label">Total Guards</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ assigned_guards }}</div>
+                <div class="stat-label">Assigned Guards</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ unassigned_guards }}</div>
+                <div class="stat-label">Unassigned Guards</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Patrol Routes</h3>
+                <button class="btn btn-primary" onclick="showCreateRouteModal()" style="margin-left: auto;">Create New Route</button>
+            </div>
+            <div class="card-body">
+                {% if routes %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Route Name</th>
+                                    <th>Description</th>
+                                    <th>Houses</th>
+                                    <th>Assigned Guards</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for route in routes %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ route.name }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if route.description %}
+                                                {{ route.description|truncatechars:50 }}
+                                            {% else %}
+                                                <span style="color: #666; font-style: italic;">No description</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge" style="background: #007bff; color: white;">{{ route.houses.count }} houses</span>
+                                            {% if route.houses.exists %}
+                                                <br><small style="color: #666;">
+                                                    {% for house in route.houses.all|slice:":3" %}
+                                                        {{ house.house_number }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                    {% if route.houses.count > 3 %}...{% endif %}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% with assigned_guards=route.assigned_guards.all %}
+                                                {% if assigned_guards %}
+                                                    {% for guard in assigned_guards %}
+                                                        <span class="badge" style="background: #28a745; color: white; margin-right: 5px;">
+                                                            {{ guard.user.username }}
+                                                        </span>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span class="badge" style="background: #6c757d; color: white;">Unassigned</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                        <td>{{ route.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                                <button class="btn btn-warning btn-sm" onclick="editRoute({{ route.id }})">Edit</button>
+                                                <button class="btn btn-success btn-sm" onclick="assignGuard({{ route.id }})">Assign Guard</button>
+                                                <button class="btn btn-danger btn-sm" onclick="deleteRoute({{ route.id }}, '{{ route.name }}')">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <h4>No Routes Created</h4>
+                        <p>Get started by creating your first patrol route.</p>
+                        <button class="btn btn-primary" onclick="showCreateRouteModal()">Create First Route</button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Route Management Guidelines</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <h5 style="margin: 0 0 10px 0; color: #495057;">🏠 Route Planning</h5>
+                        <p style="margin: 0; font-size: 0.9em; color: #666;">Create logical patrol routes that cover multiple houses efficiently. Consider geographical proximity and guard workload.</p>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <h5 style="margin: 0 0 10px 0; color: #495057;">👥 Guard Assignment</h5>
+                        <p style="margin: 0; font-size: 0.9em; color: #666;">Assign routes to approved security guards. Each guard can only be assigned to one route at a time.</p>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <h5 style="margin: 0 0 10px 0; color: #495057;">📊 Performance Tracking</h5>
+                        <p style="margin: 0; font-size: 0.9em; color: #666;">Monitor route completion through the Reports tab. Guards earn compliance points for completing assigned routes.</p>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <h5 style="margin: 0 0 10px 0; color: #495057;">🔄 Route Updates</h5>
+                        <p style="margin: 0; font-size: 0.9em; color: #666;">Routes can be modified at any time. Changes will affect guard assignments and compliance tracking.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals for Route Management -->
+    <!-- Create Route Modal -->
+    <div id="createRouteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Patrol Route</h3>
+                <span class="close" onclick="closeModal('createRouteModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="createRouteForm">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="routeName">Route Name *</label>
+                        <input type="text" id="routeName" name="name" required maxlength="100" placeholder="e.g., Downtown Patrol Route A">
+                    </div>
+                    <div class="form-group">
+                        <label for="routeDescription">Description</label>
+                        <textarea id="routeDescription" name="description" rows="3" placeholder="Optional description of the route"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Select Houses for this Route</label>
+                        <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+                            {% if houses %}
+                                {% for house in houses %}
+                                    <div style="margin-bottom: 8px;">
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" name="houses" value="{{ house.id }}" style="margin-right: 10px;">
+                                            <span>
+                                                <strong>{{ house.house_number }}</strong> - {{ house.address }}
+                                                <br><small style="color: #666;">{{ house.bedrooms }} bed, {{ house.bathrooms }} bath • {{ house.get_property_type_display }}</small>
+                                            </span>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p style="color: #666; font-style: italic;">No houses available. Create houses first before creating routes.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('createRouteModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitCreateRoute()">Create Route</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Route Modal -->
+    <div id="editRouteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Patrol Route</h3>
+                <span class="close" onclick="closeModal('editRouteModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editRouteForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="editRouteId" name="route_id">
+                    <div class="form-group">
+                        <label for="editRouteName">Route Name *</label>
+                        <input type="text" id="editRouteName" name="name" required maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="editRouteDescription">Description</label>
+                        <textarea id="editRouteDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Select Houses for this Route</label>
+                        <div id="editHousesContainer" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+                            <!-- Houses will be loaded here -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editRouteModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitEditRoute()">Update Route</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Guard Modal -->
+    <div id="assignGuardModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Assign Guard to Route</h3>
+                <span class="close" onclick="closeModal('assignGuardModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="assignGuardForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="assignRouteId" name="route_id">
+                    <div class="form-group">
+                        <label for="guardSelect">Select Guard to Assign</label>
+                        <select id="guardSelect" name="guard_id" class="form-control" required>
+                            <option value="">Choose a guard...</option>
+                            {% for guard in available_guards %}
+                                <option value="{{ guard.id }}">
+                                    {{ guard.user.get_full_name|default:guard.user.username }} (ID: {{ guard.employee_id }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('assignGuardModal')">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitAssignGuard()">Assign Guard</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Tab Styles */
+        .tab-navigation {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .tab-btn:hover {
+            background: #0056b3;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .modal-header .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-header .close:hover {
+            color: #000;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+    </style>
+
+    <script>
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+
+        // Modal functionality
+        function showCreateRouteModal() {
+            document.getElementById('createRouteModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Route management functions
+        function editRoute(routeId) {
+            // Fetch route data and populate edit modal
+            fetch(`/adminstrator/routes/${routeId}/edit/`)
+                .then(response => response.text())
+                .then(html => {
+                    // Extract form data from the HTML response
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    const routeName = doc.querySelector('#id_name')?.value || '';
+                    const routeDescription = doc.querySelector('#id_description')?.value || '';
+
+                    document.getElementById('editRouteId').value = routeId;
+                    document.getElementById('editRouteName').value = routeName;
+                    document.getElementById('editRouteDescription').value = routeDescription;
+
+                    // Load houses
+                    const housesContainer = document.getElementById('editHousesContainer');
+                    const housesHtml = doc.querySelector('.form-group .form-group .form-group div[style*="max-height"]')?.innerHTML || '';
+                    housesContainer.innerHTML = housesHtml;
+
+                    document.getElementById('editRouteModal').style.display = 'block';
+                });
+        }
+
+        function assignGuard(routeId) {
+            document.getElementById('assignRouteId').value = routeId;
+            document.getElementById('assignGuardModal').style.display = 'block';
+        }
+
+        function deleteRoute(routeId, routeName) {
+            if (confirm(`Are you sure you want to delete the route "${routeName}"?`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/adminstrator/routes/${routeId}/delete/`;
+
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Form submission functions
+        function submitCreateRoute() {
+            const form = document.getElementById('createRouteForm');
+            const formData = new FormData(form);
+
+            fetch('/adminstrator/routes/create/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    closeModal('createRouteModal');
+                    location.reload();
+                } else {
+                    alert('Error creating route. Please try again.');
+                }
+            });
+        }
+
+        function submitEditRoute() {
+            const form = document.getElementById('editRouteForm');
+            const formData = new FormData(form);
+
+            const routeId = document.getElementById('editRouteId').value;
+
+            fetch(`/adminstrator/routes/${routeId}/edit/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    closeModal('editRouteModal');
+                    location.reload();
+                } else {
+                    alert('Error updating route. Please try again.');
+                }
+            });
+        }
+
+        function submitAssignGuard() {
+            const form = document.getElementById('assignGuardForm');
+            const formData = new FormData(form);
+
+            const routeId = document.getElementById('assignRouteId').value;
+
+            fetch(`/adminstrator/routes/${routeId}/assign/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    closeModal('assignGuardModal');
+                    location.reload();
+                } else {
+                    alert('Error assigning guard. Please try again.');
+                }
+            });
+        }
+    </script>
 {% endblock %}

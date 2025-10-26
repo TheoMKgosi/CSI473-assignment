@@ -1,0 +1,78 @@
+{% extends 'adminstrator/base.html' %}
+{% block title %}Create Route{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1>Create New Patrol Route</h1>
+        <p>Define a new patrol route by selecting houses and assigning details</p>
+    </div>
+
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="id_name">Route Name *</label>
+                    <input type="text" id="id_name" name="name" required maxlength="100" placeholder="e.g., Downtown Patrol Route A">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_description">Description</label>
+                    <textarea id="id_description" name="description" rows="3" placeholder="Optional description of the route"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Houses for this Route</label>
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+                        {% if houses %}
+                            {% for house in houses %}
+                                <div style="margin-bottom: 8px;">
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" name="houses" value="{{ house.id }}" style="margin-right: 10px;">
+                                        <span>
+                                            <strong>{{ house.house_number }}</strong> - {{ house.address }}
+                                            <br><small style="color: #666;">{{ house.bedrooms }} bed, {{ house.bathrooms }} bath • {{ house.get_property_type_display }}</small>
+                                        </span>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p style="color: #666; font-style: italic;">No houses available. Create houses first before creating routes.</p>
+                        {% endif %}
+                    </div>
+                    <small style="color: #666; margin-top: 5px; display: block;">
+                        Select all houses that should be included in this patrol route.
+                    </small>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <button type="submit" class="btn btn-primary">Create Route</button>
+                    <a href="{% url 'adminstrator:route_management' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" style="max-width: 800px; margin: 20px auto;">
+        <div class="card-header">
+            <h3>Route Creation Tips</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">📍 Logical Grouping</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Group houses that are geographically close to create efficient patrol routes.</p>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">⏱️ Workload Balance</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Consider the number of houses and distance when creating routes to ensure fair workload distribution.</p>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">🔄 Route Flexibility</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Routes can be modified later. Start with a basic route and refine it based on guard feedback.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

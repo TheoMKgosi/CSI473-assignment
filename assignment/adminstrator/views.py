@@ -174,20 +174,33 @@ def subscription_statistics(request):
 
 @login_required
 def security_compliance_dashboard(request):
-    """Security guard compliance dashboard"""
-    # Get latest compliance record for each security guard
-    latest_compliance = SecurityCompliance.objects.order_by('security_guard', '-date').distinct('security_guard')
-    
+    """Security guard compliance dashboard with integrated route management"""
+    # Get latest compliance record for each security guard (SQLite compatible)
+    from django.db.models import Max
+    latest_dates = SecurityCompliance.objects.values('security_guard').annotate(
+        latest_date=Max('date')
+    ).values('security_guard', 'latest_date')
+
+    latest_compliance = []
+    for item in latest_dates:
+        record = SecurityCompliance.objects.filter(
+            security_guard=item['security_guard'],
+            date=item['latest_date']
+        ).first()
+        if record:
+            latest_compliance.append(record)
+
     # Calculate statistics
-    total_guards = latest_compliance.count()
+    total_guards = len(latest_compliance)
     compliant_count = sum(1 for record in latest_compliance if record.compliance_score >= 60)
     non_compliant_count = total_guards - compliant_count
-    
+
     # Overall compliance average
-    overall_compliance = latest_compliance.aggregate(
-        avg_score=Avg('compliance_score')
-    )['avg_score'] or 0
-    
+    if latest_compliance:
+        overall_compliance = sum(record.compliance_score for record in latest_compliance) / len(latest_compliance)
+    else:
+        overall_compliance = 0
+
     # Determine overall compliance class
     if overall_compliance >= 80:
         overall_compliance_class = 'compliance-good'
@@ -195,13 +208,13 @@ def security_compliance_dashboard(request):
         overall_compliance_class = 'compliance-warning'
     else:
         overall_compliance_class = 'compliance-danger'
-    
+
     # Prepare compliance records with additional data
     compliance_records = []
     for record in latest_compliance:
         score_class = 'score-high' if record.compliance_score >= 80 else 'score-medium' if record.compliance_score >= 60 else 'score-low'
         progress_class = 'progress-high' if record.compliance_score >= 80 else 'progress-medium' if record.compliance_score >= 60 else 'progress-low'
-        
+
         compliance_records.append({
             'security_guard': record.security_guard,
             'date': record.date,
@@ -216,17 +229,50 @@ def security_compliance_dashboard(request):
             'on_time': record.on_time,
             'notes': record.notes,
         })
-    
+
     # Sort by compliance score (lowest first for attention)
     compliance_records.sort(key=lambda x: x['compliance_score'])
-    
+
+    # Route management data
+    from security.models import PatrolRoute, SecurityProfile
+
+    routes = PatrolRoute.objects.all().prefetch_related('houses', 'assigned_guards')
+
+    # Get route statistics
+    total_routes = routes.count()
+    assigned_routes = routes.filter(assigned_guards__isnull=False).distinct().count()
+    unassigned_routes = total_routes - assigned_routes
+
+    # Get guard assignment stats
+    total_guards_route = SecurityProfile.objects.filter(status='approved').count()
+    assigned_guards = SecurityProfile.objects.filter(status='approved', assigned_route__isnull=False).count()
+    unassigned_guards = total_guards_route - assigned_guards
+
+    # Get available guards for assignment
+    available_guards = SecurityProfile.objects.filter(status='approved').select_related('user')
+
+    # Get all houses for route creation/editing
+    houses = House.objects.all()
+
     context = {
+        # Compliance data
         'total_guards': total_guards,
         'compliant_count': compliant_count,
         'non_compliant_count': non_compliant_count,
         'overall_compliance': round(overall_compliance, 1),
         'overall_compliance_class': overall_compliance_class,
         'compliance_records': compliance_records,
+
+        # Route management data
+        'routes': routes,
+        'total_routes': total_routes,
+        'assigned_routes': assigned_routes,
+        'unassigned_routes': unassigned_routes,
+        'total_guards_route': total_guards_route,
+        'assigned_guards': assigned_guards,
+        'unassigned_guards': unassigned_guards,
+        'available_guards': available_guards,
+        'houses': houses,
     }
     return render(request, 'adminstrator/security_compliance.html', context)
 
@@ -270,6 +316,174 @@ def incidents_dashboard(request):
         'recent_incidents': incident_details,
     }
     return render(request, 'adminstrator/incidents.html', context)
+
+@login_required
+def route_management(request):
+    """Route management dashboard - list all patrol routes"""
+    from security.models import PatrolRoute, SecurityProfile
+
+    routes = PatrolRoute.objects.all().prefetch_related('houses', 'assigned_guards')
+
+    # Get route statistics
+    total_routes = routes.count()
+    assigned_routes = routes.filter(assigned_guards__isnull=False).distinct().count()
+    unassigned_routes = total_routes - assigned_routes
+
+    # Get guard assignment stats
+    total_guards = SecurityProfile.objects.filter(status='approved').count()
+    assigned_guards = SecurityProfile.objects.filter(status='approved', assigned_route__isnull=False).count()
+    unassigned_guards = total_guards - assigned_guards
+
+    context = {
+        'routes': routes,
+        'total_routes': total_routes,
+        'assigned_routes': assigned_routes,
+        'unassigned_routes': unassigned_routes,
+        'total_guards': total_guards,
+        'assigned_guards': assigned_guards,
+        'unassigned_guards': unassigned_guards,
+    }
+    return render(request, 'adminstrator/route_management.html', context)
+
+@login_required
+def create_route(request):
+    """Create a new patrol route"""
+    from security.models import PatrolRoute
+    from adminstrator.models import House
+
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        house_ids = request.POST.getlist('houses')
+
+        if name:
+            route = PatrolRoute.objects.create(
+                name=name,
+                description=description,
+                created_by=request.user
+            )
+            if house_ids:
+                houses = House.objects.filter(id__in=house_ids)
+                route.houses.set(houses)
+            messages.success(request, f'Route "{name}" created successfully!')
+            return redirect('adminstrator:route_management')
+        else:
+            messages.error(request, 'Route name is required.')
+
+    houses = House.objects.all()
+    return render(request, 'adminstrator/create_route.html', {'houses': houses})
+
+@login_required
+def edit_route(request, route_id):
+    """Edit an existing patrol route"""
+    from security.models import PatrolRoute
+    from adminstrator.models import House
+
+    try:
+        route = PatrolRoute.objects.get(id=route_id)
+    except PatrolRoute.DoesNotExist:
+        messages.error(request, 'Route not found.')
+        return redirect('adminstrator:route_management')
+
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        house_ids = request.POST.getlist('houses')
+
+        if name:
+            route.name = name
+            route.description = description
+            route.save()
+            if house_ids:
+                houses = House.objects.filter(id__in=house_ids)
+                route.houses.set(houses)
+            else:
+                route.houses.clear()
+            messages.success(request, f'Route "{name}" updated successfully!')
+            return redirect('adminstrator:route_management')
+        else:
+            messages.error(request, 'Route name is required.')
+
+    houses = House.objects.all()
+    selected_houses = route.houses.values_list('id', flat=True)
+    return render(request, 'adminstrator/edit_route.html', {
+        'route': route,
+        'houses': houses,
+        'selected_houses': selected_houses
+    })
+
+@login_required
+def delete_route(request, route_id):
+    """Delete a patrol route"""
+    from security.models import PatrolRoute
+
+    try:
+        route = PatrolRoute.objects.get(id=route_id)
+        route_name = route.name
+        route.delete()
+        messages.success(request, f'Route "{route_name}" deleted successfully!')
+    except PatrolRoute.DoesNotExist:
+        messages.error(request, 'Route not found.')
+
+    return redirect('adminstrator:route_management')
+
+@login_required
+def assign_guard_to_route(request, route_id):
+    """Assign a guard to a route"""
+    from security.models import PatrolRoute, SecurityProfile
+
+    try:
+        route = PatrolRoute.objects.get(id=route_id)
+    except PatrolRoute.DoesNotExist:
+        messages.error(request, 'Route not found.')
+        return redirect('adminstrator:route_management')
+
+    if request.method == 'POST':
+        guard_id = request.POST.get('guard_id')
+        if guard_id:
+            try:
+                guard = SecurityProfile.objects.get(id=guard_id, status='approved')
+                # Unassign from current route if any
+                SecurityProfile.objects.filter(assigned_route=route).update(assigned_route=None)
+                # Assign to new route
+                guard.assigned_route = route
+                guard.save()
+                messages.success(request, f'Guard {guard.user.username} assigned to route "{route.name}"!')
+            except SecurityProfile.DoesNotExist:
+                messages.error(request, 'Guard not found or not approved.')
+        else:
+            messages.error(request, 'Please select a guard.')
+
+    # Get available guards (approved and not assigned to this route)
+    available_guards = SecurityProfile.objects.filter(
+        status='approved'
+    ).exclude(assigned_route=route).select_related('user')
+
+    assigned_guards = SecurityProfile.objects.filter(
+        assigned_route=route
+    ).select_related('user')
+
+    return render(request, 'adminstrator/assign_guard.html', {
+        'route': route,
+        'available_guards': available_guards,
+        'assigned_guards': assigned_guards,
+    })
+
+@login_required
+def unassign_guard_from_route(request, guard_id):
+    """Unassign a guard from their route"""
+    from security.models import SecurityProfile
+
+    try:
+        guard = SecurityProfile.objects.get(id=guard_id)
+        route_name = guard.assigned_route.name if guard.assigned_route else 'route'
+        guard.assigned_route = None
+        guard.save()
+        messages.success(request, f'Guard {guard.user.username} unassigned from {route_name}!')
+    except SecurityProfile.DoesNotExist:
+        messages.error(request, 'Guard not found.')
+
+    return redirect('adminstrator:route_management')
 
 @login_required
 def user_management(request):

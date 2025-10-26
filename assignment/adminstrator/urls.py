@@ -22,4 +22,10 @@ urlpatterns = [
     path('house/<int:house_id>/', views.house_detail, name='house_detail'),
     path('api/houses/', views.house_create_api, name='house_create_api'),
     path('incidents/', views.incidents_dashboard, name='incidents'),
+    path('routes/', views.route_management, name='route_management'),
+    path('routes/create/', views.create_route, name='create_route'),
+    path('routes/<int:route_id>/edit/', views.edit_route, name='edit_route'),
+    path('routes/<int:route_id>/delete/', views.delete_route, name='delete_route'),
+    path('routes/<int:route_id>/assign/', views.assign_guard_to_route, name='assign_guard_to_route'),
+    path('guards/<int:guard_id>/unassign/', views.unassign_guard_from_route, name='unassign_guard_from_route'),
 ]
