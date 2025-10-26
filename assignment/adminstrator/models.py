@@ -90,7 +90,9 @@ class SecurityCompliance(models.Model):
     total_tasks_assigned = models.PositiveIntegerField(default=1)
     on_time = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
-    
+    scanned_houses = models.ManyToManyField(House, related_name='scanned_records', blank=True)
+    route_completed = models.BooleanField(default=False)
+
     @property
     def compliance_score(self):
         """Calculate compliance score as percentage"""
@@ -99,12 +101,16 @@ class SecurityCompliance(models.Model):
         task_completion = (self.tasks_completed / self.total_tasks_assigned) * 100
         time_bonus = 10 if self.on_time else 0
         patrol_bonus = min(20, self.patrols_completed * 5)
-        return min(100, task_completion + time_bonus + patrol_bonus)
-    
+
+        # Route completion bonus
+        route_bonus = 20 if self.route_completed else 0
+
+        return min(100, task_completion + time_bonus + patrol_bonus + route_bonus)
+
     @property
     def is_compliant(self):
-        """Check if compliance meets 60% requirement"""
-        return self.compliance_score >= 60
+        """Check if compliance meets 80% requirement"""
+        return self.compliance_score >= 80
 
     class Meta:
         verbose_name = 'Security Compliance'
