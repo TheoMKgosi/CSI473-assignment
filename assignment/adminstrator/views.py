@@ -278,42 +278,60 @@ def security_compliance_dashboard(request):
 
 @login_required
 def incidents_dashboard(request):
-    """Incidents dashboard showing all reported incidents"""
-    # Get all security compliance records that have incidents
-    incident_records = SecurityCompliance.objects.filter(
-        incidents_reported__gt=0
-    ).order_by('-date')
+    """Incidents dashboard showing panic button usage statistics"""
+    from members.models import PanicEvent, MemberProfile
+    from django.db import models
+    from django.db.models.functions import TruncDate
+
+    # Get all panic events
+    panic_events = PanicEvent.objects.select_related('member__user').order_by('-timestamp')
 
     # Calculate statistics
-    total_incidents = incident_records.aggregate(
-        total=Sum('incidents_reported')
-    )['total'] or 0
+    total_panic_events = panic_events.count()
+    resolved_events = panic_events.filter(resolved=True).count()
+    unresolved_events = total_panic_events - resolved_events
 
-    # Group incidents by date for trend analysis
-    incidents_by_date = incident_records.values('date').annotate(
-        count=Sum('incidents_reported')
+    # Get unique members who triggered panic buttons
+    unique_members = panic_events.values('member').distinct().count()
+
+    # Group panic events by date for trend analysis
+    from django.db.models.functions import TruncDate
+    panic_by_date = panic_events.annotate(
+        date=TruncDate('timestamp')
+    ).values('date').annotate(
+        count=models.Count('id')
     ).order_by('-date')[:30]  # Last 30 days
 
-    # Get recent incidents (last 10)
-    recent_incidents = incident_records[:10]
+    # Get recent panic events (last 10)
+    recent_panic_events = panic_events[:10]
 
-    # Prepare incident details
-    incident_details = []
-    for record in recent_incidents:
-        incident_details.append({
-            'security_guard': record.security_guard,
-            'date': record.date,
-            'incidents_reported': record.incidents_reported,
-            'location': ', '.join([house.address for house in record.scanned_houses.all()]) if record.scanned_houses.exists() else 'Not specified',
-            'notes': record.notes,
-            'compliance_score': record.compliance_score,
+    # Prepare panic event details
+    panic_details = []
+    for event in recent_panic_events:
+        panic_details.append({
+            'member': event.member,
+            'timestamp': event.timestamp,
+            'emergency_type': event.emergency_type,
+            'location': event.address or 'Location not provided',
+            'description': event.description,
+            'resolved': event.resolved,
+            'resolved_at': event.resolved_at,
         })
 
+    # Get members with most panic button usage
+    member_stats = panic_events.values('member__user__username', 'member__user__first_name', 'member__user__last_name').annotate(
+        panic_count=models.Count('id'),
+        last_panic=models.Max('timestamp')
+    ).order_by('-panic_count')[:10]
+
     context = {
-        'total_incidents': total_incidents,
-        'incident_records': incident_records.count(),
-        'incidents_by_date': list(incidents_by_date),
-        'recent_incidents': incident_details,
+        'total_panic_events': total_panic_events,
+        'resolved_events': resolved_events,
+        'unresolved_events': unresolved_events,
+        'unique_members': unique_members,
+        'panic_by_date': list(panic_by_date),
+        'recent_panic_events': panic_details,
+        'member_stats': list(member_stats),
     }
     return render(request, 'adminstrator/incidents.html', context)
 

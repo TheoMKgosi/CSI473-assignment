@@ -1,76 +1,78 @@
 {% extends 'adminstrator/base.html' %}
-{% block title %}Incidents{% endblock %}
+{% block title %}Panic Button Incidents{% endblock %}
 
 {% block content %}
     <div class="page-header">
-        <h1>Incidents</h1>
-        <p>Monitor and track all reported incidents in the system</p>
+        <h1>Panic Button Incidents</h1>
+        <p>Monitor panic button usage and emergency alerts from community members</p>
     </div>
 
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-number">{{ total_incidents }}</div>
-            <div class="stat-label">Total Incidents Reported</div>
+            <div class="stat-number">{{ total_panic_events }}</div>
+            <div class="stat-label">Total Panic Events</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">{{ incident_records }}</div>
-            <div class="stat-label">Incident Reports</div>
+            <div class="stat-number">{{ unique_members }}</div>
+            <div class="stat-label">Members Who Used Panic Button</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">{{ incidents_by_date|length }}</div>
-            <div class="stat-label">Active Incident Days</div>
+            <div class="stat-number" style="color: {% if unresolved_events > 0 %}#dc3545{% else %}#28a745{% endif %};">{{ unresolved_events }}</div>
+            <div class="stat-label">Unresolved Events</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">{% if incident_records > 0 %}{{ total_incidents|div:incident_records|floatformat:1 }}{% else %}0{% endif %}</div>
-            <div class="stat-label">Avg Incidents per Report</div>
+            <div class="stat-number" style="color: #28a745;">{{ resolved_events }}</div>
+            <div class="stat-label">Resolved Events</div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <h3>Recent Incidents</h3>
+            <h3>Recent Panic Events</h3>
         </div>
         <div class="card-body">
-            {% if recent_incidents %}
+            {% if recent_panic_events %}
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Security Guard</th>
-                                <th>Date</th>
-                                <th>Incidents Reported</th>
+                                <th>Member</th>
+                                <th>Timestamp</th>
+                                <th>Emergency Type</th>
                                 <th>Location</th>
-                                <th>Compliance Score</th>
-                                <th>Notes</th>
+                                <th>Status</th>
+                                <th>Description</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for incident in recent_incidents %}
+                            {% for event in recent_panic_events %}
                                 <tr>
                                     <td>
-                                        <strong>{{ incident.security_guard.user.get_full_name|default:incident.security_guard.user.username }}</strong>
+                                        <strong>{{ event.member.user.get_full_name|default:event.member.user.username }}</strong>
+                                        <br><small style="color: #666;">{{ event.member.phone_number }}</small>
                                     </td>
-                                    <td>{{ incident.date|date:"M d, Y" }}</td>
+                                    <td>{{ event.timestamp|date:"M d, Y H:i" }}</td>
                                     <td>
-                                        <span class="badge" style="background: #dc3545; color: white; font-size: 1.1em; padding: 5px 10px;">
-                                            {{ incident.incidents_reported }}
+                                        <span class="badge" style="background: #dc3545; color: white;">
+                                            {{ event.emergency_type|title }}
                                         </span>
                                     </td>
-                                    <td>{{ incident.location }}</td>
+                                    <td>{{ event.location|truncatechars:30 }}</td>
                                     <td>
-                                        {% if incident.compliance_score >= 80 %}
-                                            <span class="badge" style="background: #28a745; color: white;">{{ incident.compliance_score|floatformat:1 }}%</span>
-                                        {% elif incident.compliance_score >= 60 %}
-                                            <span class="badge" style="background: #ffc107; color: #212529;">{{ incident.compliance_score|floatformat:1 }}%</span>
+                                        {% if event.resolved %}
+                                            <span class="badge" style="background: #28a745; color: white;">Resolved</span>
+                                            {% if event.resolved_at %}
+                                                <br><small style="color: #666;">{{ event.resolved_at|date:"M d H:i" }}</small>
+                                            {% endif %}
                                         {% else %}
-                                            <span class="badge" style="background: #dc3545; color: white;">{{ incident.compliance_score|floatformat:1 }}%</span>
+                                            <span class="badge" style="background: #ffc107; color: #212529;">Pending</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if incident.notes %}
-                                            <em>{{ incident.notes|truncatechars:50 }}</em>
+                                        {% if event.description %}
+                                            <em>{{ event.description|truncatechars:50 }}</em>
                                         {% else %}
-                                            <span style="color: #666;">No notes</span>
+                                            <span style="color: #666;">No description</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -80,21 +82,21 @@
                 </div>
             {% else %}
                 <div style="text-align: center; padding: 40px; color: #666;">
-                    <h4>No Incidents Reported</h4>
-                    <p>All security guards have reported zero incidents. Great job maintaining safety!</p>
+                    <h4>No Panic Events</h4>
+                    <p>No community members have triggered panic buttons. This indicates a safe neighborhood!</p>
                 </div>
             {% endif %}
         </div>
     </div>
 
-    {% if incidents_by_date %}
+    {% if panic_by_date %}
     <div class="card">
         <div class="card-header">
-            <h3>Incident Trends (Last 30 Days)</h3>
+            <h3>Panic Event Trends (Last 30 Days)</h3>
         </div>
         <div class="card-body">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-                {% for day in incidents_by_date %}
+                {% for day in panic_by_date %}
                     <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                         <div style="font-size: 1.5em; font-weight: bold; color: #dc3545;">{{ day.count }}</div>
                         <div style="font-size: 0.9em; color: #666;">{{ day.date|date:"M d" }}</div>
@@ -105,27 +107,57 @@
     </div>
     {% endif %}
 
+    {% if member_stats %}
     <div class="card">
         <div class="card-header">
-            <h3>Incident Response Guidelines</h3>
+            <h3>Members with Most Panic Button Usage</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                {% for member in member_stats %}
+                    <div style="padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc3545;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: #333;">
+                                {{ member.member__user__first_name }} {{ member.member__user__last_name|default:'' }}
+                                {% if not member.member__user__first_name %}
+                                    {{ member.member__user__username }}
+                                {% endif %}
+                            </h4>
+                            <span class="badge" style="background: #dc3545; color: white; font-size: 1.2em; padding: 5px 10px;">
+                                {{ member.panic_count }}
+                            </span>
+                        </div>
+                        <div style="color: #666; font-size: 0.9em;">
+                            Last panic: {{ member.last_panic|date:"M d, Y H:i" }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Panic Button Response Guidelines</h3>
         </div>
         <div class="card-body">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
                 <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                    <h5 style="margin: 0 0 10px 0; color: #495057;">🚨 Emergency Response</h5>
-                    <p style="margin: 0; font-size: 0.9em; color: #666;">For critical incidents requiring immediate police or medical response</p>
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">🚨 Immediate Response</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Panic button alerts require immediate attention. Contact emergency services if needed.</p>
                 </div>
                 <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                    <h5 style="margin: 0 0 10px 0; color: #495057;">📝 Incident Documentation</h5>
-                    <p style="margin: 0; font-size: 0.9em; color: #666;">All incidents must be documented with date, time, location, and description</p>
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">📍 Location Tracking</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Use GPS coordinates to locate the member quickly and provide assistance</p>
                 </div>
                 <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                    <h5 style="margin: 0 0 10px 0; color: #495057;">🔍 Investigation Process</h5>
-                    <p style="margin: 0; font-size: 0.9em; color: #666;">Follow-up investigations for serious incidents within 24 hours</p>
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">📞 Member Contact</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Contact the member immediately to assess the situation and provide support</p>
                 </div>
                 <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                    <h5 style="margin: 0 0 10px 0; color: #495057;">📊 Trend Analysis</h5>
-                    <p style="margin: 0; font-size: 0.9em; color: #666;">Regular review of incident patterns to improve security measures</p>
+                    <h5 style="margin: 0 0 10px 0; color: #495057;">📊 Usage Monitoring</h5>
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">Track panic button usage patterns to identify areas needing additional security</p>
                 </div>
             </div>
         </div>
