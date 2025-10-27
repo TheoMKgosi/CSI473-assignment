@@ -13,6 +13,7 @@
         <div class="tab-buttons">
             <button class="tab-btn active" onclick="showTab('reports')">📊 Reports</button>
             <button class="tab-btn" onclick="showTab('routes')">🛣️ Route Management</button>
+            <button class="tab-btn" onclick="showTab('scans')">🔍 Scan Reviews</button>
         </div>
     </div>
 
@@ -260,6 +261,134 @@
                     <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
                         <h5 style="margin: 0 0 10px 0; color: #495057;">🔄 Route Updates</h5>
                         <p style="margin: 0; font-size: 0.9em; color: #666;">Routes can be modified at any time. Changes will affect guard assignments and compliance tracking.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Reviews Tab -->
+    <div id="scans-tab" class="tab-content">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_scans }}</div>
+                <div class="stat-label">Total Scans</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ scans_today }}</div>
+                <div class="stat-label">Scans Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: {% if issue_scans > 0 %}#dc3545{% else %}#28a745{% endif %};">{{ issue_scans }}</div>
+                <div class="stat-label">Issues Found</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: #28a745;">{{ completed_scans }}</div>
+                <div class="stat-label">Completed Scans</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Scan Status Distribution</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    {% for status_count in scan_status_counts %}
+                        <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                            <div style="font-size: 1.5em; font-weight: bold; color: #007bff;">{{ status_count.count }}</div>
+                            <div style="font-size: 0.9em; color: #666; margin-top: 5px;">{{ status_count.scan_status|title|default:'Unknown' }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Recent House Scans</h3>
+            </div>
+            <div class="card-body">
+                {% if recent_scans %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Guard</th>
+                                    <th>House</th>
+                                    <th>Scan Time</th>
+                                    <th>Status</th>
+                                    <th>Comment</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for scan in recent_scans %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ scan.security_guard.user.get_full_name|default:scan.security_guard.user.username }}</strong>
+                                        </td>
+                                        <td>
+                                            <strong>{{ scan.house.house_number }}</strong><br>
+                                            <small style="color: #666;">{{ scan.house.address|truncatechars:30 }}</small>
+                                        </td>
+                                        <td>{{ scan.scan_time|date:"M d, H:i" }}</td>
+                                        <td>
+                                            <span class="badge badge-{{ scan.scan_status|default:'completed' }}">
+                                                {{ scan.get_scan_status_display|default:'Completed' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if scan.comment %}
+                                                <div class="comment-box">{{ scan.comment|truncatechars:50 }}</div>
+                                            {% else %}
+                                                <span style="color: #666; font-style: italic;">No comment</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if scan.location_lat and scan.location_lng %}
+                                                <small style="color: #666;">
+                                                    {{ scan.location_lat|floatformat:4 }},<br>{{ scan.location_lng|floatformat:4 }}
+                                                </small>
+                                            {% else %}
+                                                <span style="color: #999;">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <h4>No Scans Recorded</h4>
+                        <p>Security guards haven't performed any QR code scans yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Scan Review Guidelines</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <h5 style="margin: 0 0 10px 0; color: #495057;">📝 Comment Quality</h5>
+                        <p style="margin: 0; font-size: 0.9em; color: #666;">Review scan comments for detail and relevance. Guards should note any security concerns or observations.</p>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <h5 style="margin: 0 0 10px 0; color: #495057;">🚨 Issue Tracking</h5>
+                        <p style="margin: 0; font-size: 0.9em; color: #666;">Monitor scans marked as "Issue Found" and follow up with guards about specific concerns.</p>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <h5 style="margin: 0 0 10px 0; color: #495057;">📍 Location Data</h5>
+                        <p style="margin: 0; font-size: 0.9em; color: #666;">Verify that location data is being captured during scans for patrol verification.</p>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <h5 style="margin: 0 0 10px 0; color: #495057;">⏰ Timeliness</h5>
+                        <p style="margin: 0; font-size: 0.9em; color: #666;">Check scan timestamps to ensure patrols are being conducted during appropriate hours.</p>
                     </div>
                 </div>
             </div>

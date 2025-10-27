@@ -254,6 +254,23 @@ def security_compliance_dashboard(request):
     # Get all houses for route creation/editing
     houses = House.objects.all()
 
+    # Scan review data
+    from adminstrator.models import HouseScan
+    recent_scans = HouseScan.objects.select_related(
+        'security_guard__user', 'house', 'compliance_record'
+    ).order_by('-scan_time')[:50]  # Last 50 scans
+
+    # Scan statistics
+    total_scans = HouseScan.objects.count()
+    scans_today = HouseScan.objects.filter(scan_time__date=timezone.now().date()).count()
+    issue_scans = HouseScan.objects.filter(scan_status='issue_found').count()
+    completed_scans = HouseScan.objects.filter(scan_status='completed').count()
+
+    # Group scans by status for analytics
+    scan_status_counts = HouseScan.objects.values('scan_status').annotate(
+        count=models.Count('id')
+    ).order_by('-count')
+
     context = {
         # Compliance data
         'total_guards': total_guards,
@@ -273,6 +290,14 @@ def security_compliance_dashboard(request):
         'unassigned_guards': unassigned_guards,
         'available_guards': available_guards,
         'houses': houses,
+
+        # Scan review data
+        'recent_scans': recent_scans,
+        'total_scans': total_scans,
+        'scans_today': scans_today,
+        'issue_scans': issue_scans,
+        'completed_scans': completed_scans,
+        'scan_status_counts': scan_status_counts,
     }
     return render(request, 'adminstrator/security_compliance.html', context)
 

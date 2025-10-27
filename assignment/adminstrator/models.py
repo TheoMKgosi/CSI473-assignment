@@ -78,6 +78,31 @@ class Subscription(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.subscription_type} ({self.status})"
 
+class HouseScan(models.Model):
+    """Individual house scan records with comments"""
+    security_guard = models.ForeignKey('security.SecurityProfile', on_delete=models.CASCADE, related_name='house_scans')
+    house = models.ForeignKey(House, on_delete=models.CASCADE, related_name='scan_records')
+    compliance_record = models.ForeignKey('SecurityCompliance', on_delete=models.CASCADE, related_name='house_scans')
+    scan_time = models.DateTimeField(default=timezone.now)
+    comment = models.TextField(blank=True, help_text="Comments about the scan (condition, issues, observations)")
+    scan_status = models.CharField(max_length=20, choices=[
+        ('completed', 'Completed'),
+        ('partial', 'Partial Scan'),
+        ('missed', 'Missed'),
+        ('issue_found', 'Issue Found'),
+    ], default='completed')
+    location_lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    location_lng = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'House Scan'
+        verbose_name_plural = 'House Scans'
+        ordering = ['-scan_time']
+        unique_together = ['compliance_record', 'house']  # One scan per house per compliance record
+
+    def __str__(self):
+        return f"Scan of {self.house} by {self.security_guard.user.username} at {self.scan_time}"
+
 class SecurityCompliance(models.Model):
     """Security guard compliance tracking model"""
     security_guard = models.ForeignKey('security.SecurityProfile', on_delete=models.CASCADE, related_name='compliance_records')

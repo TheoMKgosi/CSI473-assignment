@@ -59,7 +59,52 @@ def security_login(request):
 @login_required
 def security_dashboard(request):
     """Security personnel dashboard view"""
-    return render(request, 'security/dashboard.html')
+    try:
+        security_profile = request.user.security_profile
+        if security_profile.status != 'approved':
+            messages.error(request, 'Your account is not approved yet.')
+            return redirect('security:security_login')
+    except SecurityProfile.DoesNotExist:
+        messages.error(request, 'Security profile not found.')
+        return redirect('security:security_login')
+
+    # Get today's compliance record
+    today = timezone.now().date()
+    try:
+        compliance_today = SecurityCompliance.objects.get(
+            security_guard=security_profile,
+            date=today
+        )
+        from adminstrator.models import HouseScan
+        todays_scans = HouseScan.objects.filter(
+            compliance_record=compliance_today
+        ).select_related('house').order_by('-scan_time')
+    except SecurityCompliance.DoesNotExist:
+        compliance_today = None
+        todays_scans = []
+
+    # Get assigned route info
+    assigned_route = security_profile.assigned_route
+    if assigned_route:
+        route_houses = assigned_route.houses.all()
+        total_route_houses = route_houses.count()
+        scanned_today = compliance_today.scanned_houses.count() if compliance_today else 0
+    else:
+        route_houses = []
+        total_route_houses = 0
+        scanned_today = 0
+
+    context = {
+        'security_profile': security_profile,
+        'assigned_route': assigned_route,
+        'route_houses': route_houses,
+        'total_route_houses': total_route_houses,
+        'scanned_today': scanned_today,
+        'compliance_today': compliance_today,
+        'todays_scans': todays_scans,
+    }
+
+    return render(request, 'security/dashboard.html', context)
 
 def security_logout(request):
     """Handle security personnel logout"""
@@ -117,8 +162,13 @@ class PatrolRouteViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def scan_qr_code(request):
-    """API endpoint for security guards to scan QR codes"""
+    """API endpoint for security guards to scan QR codes with comments"""
     qr_data = request.data.get('qr_data')
+    comment = request.data.get('comment', '')
+    scan_status = request.data.get('scan_status', 'completed')
+    location_lat = request.data.get('latitude')
+    location_lng = request.data.get('longitude')
+
     if not qr_data:
         return Response({'error': 'QR data required'}, status=400)
 
@@ -148,11 +198,40 @@ def scan_qr_code(request):
         }
     )
 
-    # Add house to scanned houses if not already scanned
-    if not compliance.scanned_houses.filter(id=house.id).exists():
-        compliance.scanned_houses.add(house)
-        compliance.tasks_completed += 1
-        compliance.save()
+    # Check if house was already scanned today
+    from adminstrator.models import HouseScan
+    existing_scan = HouseScan.objects.filter(
+        compliance_record=compliance,
+        house=house
+    ).first()
+
+    if existing_scan:
+        # Update existing scan
+        existing_scan.comment = comment
+        existing_scan.scan_status = scan_status
+        if location_lat and location_lng:
+            existing_scan.location_lat = location_lat
+            existing_scan.location_lng = location_lng
+        existing_scan.scan_time = timezone.now()
+        existing_scan.save()
+        message = f'House {house.address} scan updated'
+    else:
+        # Create new house scan record
+        HouseScan.objects.create(
+            security_guard=security_profile,
+            house=house,
+            compliance_record=compliance,
+            comment=comment,
+            scan_status=scan_status,
+            location_lat=location_lat,
+            location_lng=location_lng,
+        )
+
+        # Add house to scanned houses if not already scanned
+        if not compliance.scanned_houses.filter(id=house.id).exists():
+            compliance.scanned_houses.add(house)
+            compliance.tasks_completed += 1
+            compliance.save()
 
         # Check if route is completed
         if security_profile.assigned_route:
@@ -162,10 +241,13 @@ def scan_qr_code(request):
                 compliance.route_completed = True
                 compliance.save()
 
+        message = f'House {house.address} scanned successfully'
+
     return Response({
-        'message': f'House {house.address} scanned successfully',
+        'message': message,
         'compliance_score': compliance.compliance_score,
-        'route_completed': compliance.route_completed
+        'route_completed': compliance.route_completed,
+        'scan_status': scan_status
     })
 
 
