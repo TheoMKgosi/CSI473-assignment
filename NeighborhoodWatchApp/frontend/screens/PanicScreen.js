@@ -1,81 +1,74 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 
-const PatrolStatsScreen = () => {
-  const [stats, setStats] = useState({ 
-    completed: 0, 
-    response_time: 'N/A',
-    coverage: 0,
-    incidents: 0
-  });
+const PanicScreen = () => {
+  const [isPressed, setIsPressed] = useState(false);
 
-  useEffect(() => {
-    // Mock stats
-    setStats({
-      completed: 12,
-      response_time: '4.2 min',
-      coverage: 85,
-      incidents: 2
-    });
-  }, []);
+  const triggerPanic = () => {
+    setIsPressed(true);
+    Alert.alert(
+      '🚨 EMERGENCY ALERT SENT!',
+      'Your location and details have been shared with security patrols and nearby neighbors.',
+      [
+        { 
+          text: 'OK', 
+          style: 'default',
+          onPress: () => setIsPressed(false)
+        }
+      ]
+    );
+  };
 
-  const statCards = [
-    {
-      title: 'Patrols Completed',
-      value: stats.completed,
-      icon: '🛡️',
-      color: '#61a3d2'
-    },
-    {
-      title: 'Avg Response Time',
-      value: stats.response_time,
-      icon: '⏱️',
-      color: '#4CAF50'
-    },
-    {
-      title: 'Area Coverage',
-      value: `${stats.coverage}%`,
-      icon: '🗺️',
-      color: '#FF9800'
-    },
-    {
-      title: 'Incidents Reported',
-      value: stats.incidents,
-      icon: '📝',
-      color: '#F44336'
-    },
+  const emergencyContacts = [
+    { name: 'Local Police', number: '999', icon: '👮' },
+    { name: 'Security Base', number: '+267-123-4567', icon: '🏢' },
+    { name: 'Medical Emergency', number: '997', icon: '🏥' },
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Security Dashboard</Text>
-        <Text style={styles.subtitle}>Real-time patrol statistics</Text>
+        <Text style={styles.title}>Emergency Alert System</Text>
+        <Text style={styles.subtitle}>For immediate security threats</Text>
       </View>
 
-      <View style={styles.statsGrid}>
-        {statCards.map((stat, index) => (
-          <View key={index} style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: `${stat.color}20` }]}>
-              <Text style={styles.icon}>{stat.icon}</Text>
+      <View style={styles.alertSection}>
+        <Text style={styles.alertTitle}>Trigger Emergency Alert</Text>
+        <Text style={styles.alertDescription}>
+          This will immediately notify all security officers and community members in your area with your current location.
+        </Text>
+
+        <TouchableOpacity 
+          style={[styles.panicButton, isPressed && styles.panicButtonPressed]}
+          onPress={triggerPanic}
+          disabled={isPressed}
+        >
+          <Text style={styles.panicIcon}>🚨</Text>
+          <Text style={styles.panicText}>EMERGENCY SOS</Text>
+          <Text style={styles.panicSubtext}>Press in case of danger</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.contactsSection}>
+        <Text style={styles.sectionTitle}>Emergency Contacts</Text>
+        {emergencyContacts.map((contact, index) => (
+          <View key={index} style={styles.contactCard}>
+            <Text style={styles.contactIcon}>{contact.icon}</Text>
+            <View style={styles.contactInfo}>
+              <Text style={styles.contactName}>{contact.name}</Text>
+              <Text style={styles.contactNumber}>{contact.number}</Text>
             </View>
-            <Text style={styles.statValue}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.title}</Text>
+            <TouchableOpacity style={styles.callButton}>
+              <Text style={styles.callText}>📞 Call</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </View>
 
-      <View style={styles.reportSection}>
-        <Text style={styles.sectionTitle}>Monthly Summary</Text>
-        <View style={styles.reportCard}>
-          <Text style={styles.reportText}>✅ All patrol routes completed on schedule</Text>
-          <Text style={styles.reportText}>📊 Response time improved by 12% this month</Text>
-          <Text style={styles.reportText}>👥 45 active community participants</Text>
-        </View>
-      </View>
-
-      <Text style={styles.updateNote}>Last updated: Today at 14:30</Text>
-    </ScrollView>
+      <Text style={styles.footerNote}>
+        Your safety is our priority. Use responsibly.
+      </Text>
+    </View>
   );
 };
 
@@ -106,18 +99,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  statCard: {
+  alertSection: {
     backgroundColor: '#fff',
-    width: '48%',
-    padding: 15,
+    padding: 20,
     borderRadius: 15,
-    marginBottom: 15,
+    marginBottom: 20,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -125,59 +111,106 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  statIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+  alertTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#d32f2f',
     marginBottom: 10,
   },
-  icon: {
-    fontSize: 20,
-  },
-  statValue: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    color: '#333',
-    marginBottom: 5,
-  },
-  statLabel: { 
-    fontSize: 12, 
+  alertDescription: {
+    fontSize: 14,
     color: '#666',
     textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
   },
-  reportSection: {
+  panicButton: {
+    backgroundColor: '#d32f2f',
+    paddingVertical: 25,
+    paddingHorizontal: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#d32f2f',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  panicButtonPressed: {
+    backgroundColor: '#b71c1c',
+    transform: [{ scale: 0.98 }],
+  },
+  panicIcon: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  panicText: { 
+    color: '#fff', 
+    fontSize: 20, 
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  panicSubtext: { 
+    color: '#ffcdd2', 
+    fontSize: 12,
+  },
+  contactsSection: {
     marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 10,
+    marginBottom: 15,
   },
-  reportCard: {
+  contactCard: {
     backgroundColor: '#fff',
     padding: 15,
     borderRadius: 15,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  reportText: {
-    fontSize: 14,
-    color: '#444',
-    marginBottom: 8,
-    lineHeight: 20,
+  contactIcon: {
+    fontSize: 24,
+    marginRight: 15,
   },
-  updateNote: { 
-    textAlign: 'center', 
-    color: '#888', 
-    fontSize: 12, 
-    marginTop: 10,
+  contactInfo: {
+    flex: 1,
+  },
+  contactName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 2,
+  },
+  contactNumber: {
+    fontSize: 14,
+    color: '#666',
+  },
+  callButton: {
+    backgroundColor: '#61a3d2',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+  },
+  callText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  footerNote: {
+    textAlign: 'center',
+    color: '#888',
+    fontSize: 12,
+    fontStyle: 'italic',
   },
 });
 
-export default PatrolStatsScreen;
+export default PanicScreen;
