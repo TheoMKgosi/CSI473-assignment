@@ -8,6 +8,7 @@ import {
   Switch,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SettingsScreen = ({ navigation, setIsAuthenticated }) => {
   const [settings, setSettings] = useState({
@@ -37,7 +38,14 @@ const SettingsScreen = ({ navigation, setIsAuthenticated }) => {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => setIsAuthenticated(false),
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('token');
+              navigation.replace('(auth)/login');
+            } catch (e) {
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
+          },
         },
       ]
     );
