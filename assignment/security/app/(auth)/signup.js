@@ -10,8 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 
-const SignUpScreen = ({ navigation }) => {
+const SignUpScreen = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -39,9 +41,9 @@ const SignUpScreen = ({ navigation }) => {
       return;
     }
     
-  // Simulate signup - in real app, this would call your backend
-  Alert.alert('Success', 'Account created successfully! Please login.');
-  navigation.navigate('(auth)/login');
+    // Simulate signup - in real app, this would call your backend
+    Alert.alert('Success', 'Account created successfully! Please login.');
+    router.replace('/(auth)/login');
   };
 
   const updateFormData = (field, value) => {
@@ -110,10 +112,9 @@ const SignUpScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
           <Text style={styles.signUpButtonText}>Create Account</Text>
         </TouchableOpacity>
-        
         <TouchableOpacity 
           style={styles.loginLink}
-          onPress={() => navigation.navigate('(auth)/login')}
+          onPress={() => router.replace('/(auth)/login')}
         >
           <Text style={styles.loginText}>
             Already have an account? Login

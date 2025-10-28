@@ -9,9 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const LoginScreen = ({ navigation, setIsAuthenticated }) => {
+const LoginScreen = ({ navigation }) => {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -64,14 +66,21 @@ const LoginScreen = ({ navigation, setIsAuthenticated }) => {
         
         <TouchableOpacity 
           style={styles.signUpLink}
-          onPress={() => navigation.navigate('(auth)/signup')}
+          onPress={() => router.replace('/(auth)/signup')}
         >
           <Text style={styles.signUpText}>
             Don't have an account? Sign Up
           </Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.demoButton}>
+        <TouchableOpacity style={styles.demoButton} onPress={async () => {
+          try {
+            await AsyncStorage.setItem('token', 'demo-token');
+            router.replace('/(tabs)/index');
+          } catch (e) {
+            Alert.alert('Error', 'Failed to use demo account');
+          }
+        }}>
           <Text style={styles.demoButtonText}>Use Demo Account</Text>
         </TouchableOpacity>
       </View>
