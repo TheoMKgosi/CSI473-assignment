@@ -95,23 +95,23 @@ def login(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def patrol_stats(request):
-return Response({'completed': 0, 'response_time': '0 min'}, status=200)
+    return Response({'completed': 0, 'response_time': '0 min'}, status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def panic(request):
-return Response({'success': True, 'message': 'Emergency alert triggered'}, status=200)
+    return Response({'success': True, 'message': 'Emergency alert triggered'}, status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def pay_subscription(request):
-payment_date = request.data.get('payment_date')
-amount = request.data.get('amount')
-if not amount:
-    return Response({'errors': 'Amount is required'}, status=400)
-return Response({'success': True, 'message': 'Payment processed'}, status=200)
+    payment_date = request.data.get('payment_date')
+    amount = request.data.get('amount')
+    if not amount:
+        return Response({'errors': 'Amount is required'}, status=400)
+    return Response({'success': True, 'message': 'Payment processed'}, status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def cancel_subscription(request):
-return Response({'success': True, 'message': 'Subscription cancelled'}, status=200)
+    return Response({'success': True, 'message': 'Subscription cancelled'}, status=200)
