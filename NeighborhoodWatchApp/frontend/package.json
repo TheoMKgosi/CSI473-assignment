@@ -3,10 +3,20 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
     "build:apk": "expo build:android",
     "build:ios": "expo build:ios",
     "build:web": "expo build:web",
-    "deploy:web": "npx expo export:web && cp -r dist/* /var/www/html/"
+    "deploy:web": "npx expo export:web && cp -r dist/* /var/www/html/",
+    "eas:build": "eas build --platform all",
+    "eas:build-android": "eas build --platform android",
+    "eas:build-ios": "eas build --platform ios",
+    "eas:submit": "eas submit",
+    "eas:update": "eas update",
+    "eas:configure": "eas build:configure"
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
@@ -15,7 +25,9 @@
     "@react-navigation/stack": "^6.4.1",
     "axios": "^1.13.0",
     "expo": "^54.0.20",
+    "expo-build-properties": "~0.12.0",
     "expo-font": "~12.0.10",
+    "expo-location": "~17.0.1",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
     "react-dom": "^18.2.0",
