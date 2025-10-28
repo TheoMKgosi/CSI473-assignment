@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 const SignupScreen = ({ navigation }) => {
   const [form, setForm] = useState({
@@ -11,8 +11,6 @@ const SignupScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async () => {
-    console.log('Signup button pressed'); // Debug log
-    
     for (const field in form) {
       if (!form[field].trim()) {
         Alert.alert('Error', `Please fill in ${field.replace('_', ' ')}`);
@@ -23,29 +21,19 @@ const SignupScreen = ({ navigation }) => {
     setIsLoading(true);
 
     try {
-      console.log('Attempting signup...'); // Debug log
-      const response = await axios.post(`${API_URL}/signup/`, form);
+      const response = await axios.post(`${API_BASE_URL}/api/signup/`, form);
       
-      console.log('Signup response:', response.data); // Debug log
-
       if (response.data.success) {
         Alert.alert(
           'Success',
           response.data.message || 'Account created successfully! Awaiting admin approval.',
           [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
         );
+      } else {
+        Alert.alert('Signup Failed', response.data.errors || 'Please try again.');
       }
     } catch (error) {
-      console.log('Signup error details:', error); // Debug log
-      
-      // If backend is not reachable, use mock signup for demo
-      if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
-        Alert.alert(
-          'Demo Mode', 
-          'Account created in demo mode! (Backend not connected)',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-        );
-      } else if (error.response?.data?.errors) {
+      if (error.response?.data?.errors) {
         Alert.alert('Signup Failed', error.response.data.errors);
       } else {
         Alert.alert('Error', 'Signup failed. Please try again.');
@@ -84,18 +72,8 @@ const SignupScreen = ({ navigation }) => {
                   'default'
                 }
                 autoCapitalize={field === 'email' ? 'none' : 'words'}
-                editable={!isLoading}
               />
             ))}
-
-            <View style={styles.termsContainer}>
-              <TouchableOpacity style={styles.checkbox}>
-                <Text style={styles.checkboxText}>☑</Text>
-              </TouchableOpacity>
-              <Text style={styles.termsText}>
-                I agree to the <Text style={styles.termsLink}>Terms & Conditions</Text>
-              </Text>
-            </View>
 
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -110,7 +88,6 @@ const SignupScreen = ({ navigation }) => {
             <TouchableOpacity
               style={styles.loginLink}
               onPress={() => navigation.navigate('Login')}
-              disabled={isLoading}
             >
               <Text style={styles.loginText}>
                 Already have an account? <Text style={styles.loginBold}>Sign In</Text>
@@ -123,6 +100,7 @@ const SignupScreen = ({ navigation }) => {
   );
 };
 
+// ... keep your existing styles
 const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,

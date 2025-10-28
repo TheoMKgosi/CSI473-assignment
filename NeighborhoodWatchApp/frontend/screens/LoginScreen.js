@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -10,8 +10,6 @@ const LoginScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    console.log('Login button pressed'); // Debug log
-    
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
@@ -20,13 +18,10 @@ const LoginScreen = ({ navigation }) => {
     setIsLoading(true);
 
     try {
-      console.log('Attempting login...'); // Debug log
-      const response = await axios.post(`${API_URL}/login/`, {
+      const response = await axios.post(`${API_BASE_URL}/api/login/`, {
         email,
         password
       });
-
-      console.log('Login response:', response.data); // Debug log
 
       if (response.data.success) {
         Alert.alert('Success', 'Logged in successfully!');
@@ -34,21 +29,16 @@ const LoginScreen = ({ navigation }) => {
           token: response.data.token,
           user: response.data.user
         });
+      } else {
+        Alert.alert('Login Failed', response.data.errors || 'Invalid credentials');
       }
     } catch (error) {
-      console.log('Login error details:', error); // Debug log
+      console.log('Login error:', error);
       
-      // If backend is not reachable, use mock login for demo
-      if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
-        Alert.alert('Demo Mode', 'Using mock login for demonstration');
-        navigation.navigate('Home', {
-          token: 'demo-token-12345',
-          user: { email: email, full_name: 'Demo User' }
-        });
+      if (error.response?.status === 403) {
+        Alert.alert('Approval Required', 'Your account is pending admin approval.');
       } else if (error.response?.data?.errors) {
         Alert.alert('Login Failed', error.response.data.errors);
-      } else if (error.response?.status === 403) {
-        Alert.alert('Approval Required', 'Account pending admin approval.');
       } else {
         Alert.alert('Error', 'Login failed. Please try again.');
       }
@@ -78,7 +68,6 @@ const LoginScreen = ({ navigation }) => {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            editable={!isLoading}
           />
           
           <TextInput
@@ -88,12 +77,7 @@ const LoginScreen = ({ navigation }) => {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            editable={!isLoading}
           />
-
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotText}>Forgot password?</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -108,7 +92,6 @@ const LoginScreen = ({ navigation }) => {
           <TouchableOpacity
             style={styles.signupLink}
             onPress={() => navigation.navigate('Signup')}
-            disabled={isLoading}
           >
             <Text style={styles.signupText}>
               New to Neighborhood Watch? <Text style={styles.signupBold}>Sign Up</Text>
