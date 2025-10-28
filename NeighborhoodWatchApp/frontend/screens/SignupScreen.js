@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     justifyContent: 'space-between',
-    maxHeight: 650, // Fixed container height
+    maxHeight: 600, // Fixed container height
   },
   header: {
     alignItems: 'center',
