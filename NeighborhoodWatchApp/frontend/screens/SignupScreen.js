@@ -30,16 +30,16 @@ const SignupScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <View style={styles.container}>
+      {/* Compact Header */}
       <View style={styles.logoContainer}>
         <Text style={styles.shieldIcon}>🛡️</Text>
-        <Text style={styles.appName}>Join Our Community</Text>
-        <Text style={styles.appTagline}>Neighborhood Watch</Text>
+        <Text style={styles.appName}>Join Neighborhood Watch</Text>
       </View>
 
+      {/* Compact Form */}
       <View style={styles.formContainer}>
         <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Sign up to enhance community safety</Text>
 
         {['full_name', 'email', 'password', 'phone', 'address'].map((field) => (
           <TextInput
@@ -59,12 +59,13 @@ const SignupScreen = ({ navigation }) => {
           />
         ))}
 
+        {/* Compact Terms */}
         <View style={styles.termsContainer}>
           <TouchableOpacity style={styles.checkbox}>
-            <Text style={styles.checkboxText}>☐</Text>
+            <Text style={styles.checkboxText}>☑</Text>
           </TouchableOpacity>
           <Text style={styles.termsText}>
-            I agree to the <Text style={styles.termsLink}>Terms & Conditions</Text>
+            I agree to Terms & Conditions
           </Text>
         </View>
 
@@ -88,109 +89,96 @@ const SignupScreen = ({ navigation }) => {
           </Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
+  container: {
+    flex: 1,
     backgroundColor: '#fff',
+    padding: 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 30,
+    marginTop: 20,
+    marginBottom: 20,
   },
   shieldIcon: {
-    fontSize: 70,
+    fontSize: 50,
     color: '#61a3d2',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   appName: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: '#333',
-    marginBottom: 4,
-  },
-  appTagline: {
-    fontSize: 16,
-    color: '#61a3d2',
-    fontWeight: '500',
+    textAlign: 'center',
   },
   formContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 20,
     textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  input: { 
-    width: '100%', 
-    padding: 16, 
-    marginVertical: 8, 
-    borderWidth: 1, 
-    borderColor: '#e0e0e0', 
-    borderRadius: 12,
+  input: {
+    width: '100%',
+    padding: 12,
+    marginVertical: 6,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
     backgroundColor: '#fafafa',
-    fontSize: 16,
+    fontSize: 14,
+    height: 44,
   },
   termsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 15,
-    paddingHorizontal: 5,
+    marginVertical: 10,
+    justifyContent: 'center',
   },
   checkbox: {
-    marginRight: 10,
+    marginRight: 8,
   },
   checkboxText: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#61a3d2',
   },
   termsText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
-    flex: 1,
   },
-  termsLink: {
-    color: '#61a3d2',
-    fontWeight: '500',
-  },
-  button: { 
-    width: '100%', 
-    padding: 16, 
-    backgroundColor: '#61a3d2', 
-    borderRadius: 12, 
-    marginTop: 10, 
+  button: {
+    width: '100%',
+    padding: 12,
+    backgroundColor: '#61a3d2',
+    borderRadius: 8,
+    marginTop: 10,
     alignItems: 'center',
+    height: 44,
+    justifyContent: 'center',
   },
   buttonDisabled: {
     backgroundColor: '#cccccc',
   },
-  buttonText: { 
-    color: '#fff', 
+  buttonText: {
+    color: '#fff',
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: 14,
   },
   loginLink: {
-    marginTop: 25,
-    marginBottom: 20,
+    marginTop: 15,
     alignItems: 'center',
   },
   loginText: {
     color: '#666',
-    fontSize: 14,
+    fontSize: 12,
   },
   loginBold: {
     color: '#61a3d2',
