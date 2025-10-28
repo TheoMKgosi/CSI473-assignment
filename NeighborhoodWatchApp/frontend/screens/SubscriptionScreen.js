@@ -1,45 +1,53 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal } from 'react-native';
 
 const SubscriptionScreen = () => {
   const [status, setStatus] = useState('active');
   const [plan, setPlan] = useState('premium');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
-  const handlePayment = (amount) => {
-    Alert.alert(
-      'Payment Confirmation',
-      `Process payment of P${amount} for Neighborhood Watch Premium?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm Payment',
-          style: 'default',
-          onPress: () => {
-            Alert.alert('Success', `Payment of P${amount} processed successfully!`);
-            setStatus('active');
-            setPlan('premium');
-          },
-        },
-      ]
-    );
+  const handlePayment = (amount, planName) => {
+    setShowPaymentModal(false);
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      Alert.alert(
+        'Payment Successful! 🎉',
+        `Your ${planName} subscription has been activated.\n\nAmount: P${amount}`,
+        [
+          {
+            text: 'Great!',
+            onPress: () => {
+              setStatus('active');
+              setPlan(planName.toLowerCase());
+              // Simulate push notification
+              Alert.alert('📢 Notification', 'Your subscription has been activated! Enjoy premium features.');
+            }
+          }
+        ]
+      );
+    }, 1000);
   };
 
   const handleCancel = () => {
+    setShowCancelModal(false);
+    
     Alert.alert(
-      'Cancel Subscription',
-      'Are you sure you want to cancel your subscription? You will lose access to premium features.',
+      'Subscription Cancelled',
+      'Your premium subscription will remain active until the end of your billing period.',
       [
-        { text: 'Keep Subscription', style: 'cancel' },
         {
-          text: 'Cancel Anyway',
-          style: 'destructive',
+          text: 'OK',
           onPress: () => {
             setStatus('cancelled');
             setPlan('basic');
-            Alert.alert('Cancelled', 'Your subscription has been cancelled.');
-          },
-        },
+            // Simulate push notification
+            Alert.alert('📢 Notification', 'Your subscription has been cancelled. You will lose access to premium features after your billing period ends.');
+          }
+        }
       ]
     );
   };
@@ -48,32 +56,131 @@ const SubscriptionScreen = () => {
     setNotificationsEnabled(!notificationsEnabled);
     Alert.alert(
       'Notifications', 
-      `Push notifications ${!notificationsEnabled ? 'enabled' : 'disabled'}`
+      `Push notifications ${!notificationsEnabled ? 'enabled' : 'disabled'}`,
+      [{ text: 'OK' }]
     );
+  };
+
+  const showPaymentDialog = (plan) => {
+    setSelectedPlan(plan);
+    setShowPaymentModal(true);
+  };
+
+  const showCancelDialog = () => {
+    setShowCancelModal(true);
   };
 
   const plans = [
     {
       name: 'Basic',
       price: 'Free',
-      features: ['Basic alerts', 'Community forum access', 'Limited patrol stats', 'Email support'],
+      features: ['Basic security alerts', 'Community forum access', 'Limited patrol statistics', 'Email support', 'Basic incident reporting'],
       icon: '🔓',
-      active: plan === 'basic'
+      active: plan === 'basic',
+      priceValue: 0
     },
     {
       name: 'Premium',
       price: 'P100/month',
-      features: ['Real-time alerts', 'Full patrol statistics', 'Priority support', 'Emergency SOS', 'Advanced analytics', '24/7 monitoring'],
+      features: ['Real-time emergency alerts', 'Full patrol statistics & analytics', 'Priority 24/7 support', 'Emergency SOS button', 'Advanced location tracking', '24/7 security monitoring', 'Push notifications'],
       icon: '⭐',
-      active: plan === 'premium'
+      active: plan === 'premium',
+      priceValue: 100
     },
   ];
 
   const paymentHistory = [
-    { id: 1, date: 'Oct 28, 2024', amount: 'P100', status: 'Completed' },
-    { id: 2, date: 'Sep 28, 2024', amount: 'P100', status: 'Completed' },
-    { id: 3, date: 'Aug 28, 2024', amount: 'P100', status: 'Completed' },
+    { id: 1, date: 'Oct 28, 2024', amount: 'P100', status: 'Completed', type: 'Premium Renewal' },
+    { id: 2, date: 'Sep 28, 2024', amount: 'P100', status: 'Completed', type: 'Premium Renewal' },
+    { id: 3, date: 'Aug 28, 2024', amount: 'P100', status: 'Completed', type: 'Premium Renewal' },
   ];
+
+  const PaymentModal = () => (
+    <Modal
+      visible={showPaymentModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowPaymentModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Confirm Payment</Text>
+          <Text style={styles.modalSubtitle}>
+            You are about to subscribe to {selectedPlan?.name} Plan
+          </Text>
+          
+          <View style={styles.paymentDetails}>
+            <Text style={styles.paymentAmount}>{selectedPlan?.price}</Text>
+            <Text style={styles.paymentDescription}>Monthly subscription</Text>
+          </View>
+
+          <View style={styles.featurePreview}>
+            <Text style={styles.featurePreviewTitle}>You'll get:</Text>
+            {selectedPlan?.features.slice(0, 3).map((feature, index) => (
+              <Text key={index} style={styles.featurePreviewItem}>✓ {feature}</Text>
+            ))}
+            <Text style={styles.featurePreviewMore}>...and {selectedPlan?.features.length - 3} more features</Text>
+          </View>
+
+          <View style={styles.modalButtons}>
+            <TouchableOpacity 
+              style={styles.modalCancelButton}
+              onPress={() => setShowPaymentModal(false)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.modalConfirmButton}
+              onPress={() => handlePayment(selectedPlan?.priceValue, selectedPlan?.name)}
+            >
+              <Text style={styles.modalConfirmText}>Confirm Payment</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const CancelModal = () => (
+    <Modal
+      visible={showCancelModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowCancelModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Cancel Subscription?</Text>
+          <Text style={styles.modalSubtitle}>
+            Are you sure you want to cancel your Premium subscription?
+          </Text>
+          
+          <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>You'll lose access to:</Text>
+            <Text style={styles.warningItem}>• Real-time emergency alerts</Text>
+            <Text style={styles.warningItem}>• Advanced security features</Text>
+            <Text style={styles.warningItem}>• Priority 24/7 support</Text>
+            <Text style={styles.warningItem}>• Full patrol statistics</Text>
+          </View>
+
+          <View style={styles.modalButtons}>
+            <TouchableOpacity 
+              style={styles.modalCancelButton}
+              onPress={() => setShowCancelModal(false)}
+            >
+              <Text style={styles.modalCancelText}>Keep Subscription</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.modalConfirmCancelButton}
+              onPress={handleCancel}
+            >
+              <Text style={styles.modalConfirmText}>Cancel Anyway</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -120,7 +227,7 @@ const SubscriptionScreen = () => {
             {!planItem.active && planItem.name === 'Premium' && (
               <TouchableOpacity 
                 style={styles.subscribeButton}
-                onPress={() => handlePayment(100)}
+                onPress={() => showPaymentDialog(planItem)}
               >
                 <Text style={styles.subscribeText}>Upgrade to Premium</Text>
               </TouchableOpacity>
@@ -129,20 +236,20 @@ const SubscriptionScreen = () => {
         ))}
       </View>
 
-      {status === 'active' && (
+      {status === 'active' && plan === 'premium' && (
         <View style={styles.actionsSection}>
           <Text style={styles.sectionTitle}>Manage Subscription</Text>
           <View style={styles.actionButtons}>
             <TouchableOpacity 
               style={styles.renewButton}
-              onPress={() => handlePayment(100)}
+              onPress={() => showPaymentDialog(plans[1])}
             >
               <Text style={styles.renewText}>🔄 Renew Now</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.cancelButton}
-              onPress={handleCancel}
+              onPress={showCancelDialog}
             >
               <Text style={styles.cancelText}>Cancel Subscription</Text>
             </TouchableOpacity>
@@ -155,7 +262,7 @@ const SubscriptionScreen = () => {
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
             <Text style={styles.settingTitle}>Push Notifications</Text>
-            <Text style={styles.settingDescription}>Receive instant security alerts</Text>
+            <Text style={styles.settingDescription}>Receive instant security alerts and updates</Text>
           </View>
           <TouchableOpacity 
             style={[styles.toggleButton, notificationsEnabled && styles.toggleButtonActive]}
@@ -174,10 +281,13 @@ const SubscriptionScreen = () => {
           <View key={payment.id} style={styles.paymentItem}>
             <View style={styles.paymentInfo}>
               <Text style={styles.paymentDate}>{payment.date}</Text>
-              <Text style={styles.paymentAmount}>{payment.amount}</Text>
+              <Text style={styles.paymentType}>{payment.type}</Text>
             </View>
-            <View style={[styles.statusBadge, styles.paymentStatus]}>
-              <Text style={styles.statusText}>{payment.status}</Text>
+            <View style={styles.paymentRight}>
+              <Text style={styles.paymentAmount}>{payment.amount}</Text>
+              <View style={[styles.statusBadge, styles.paymentStatus]}>
+                <Text style={styles.statusText}>{payment.status}</Text>
+              </View>
             </View>
           </View>
         ))}
@@ -194,6 +304,9 @@ const SubscriptionScreen = () => {
           • Instant activation
         </Text>
       </View>
+
+      <PaymentModal />
+      <CancelModal />
     </ScrollView>
   );
 };
@@ -420,10 +533,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
   },
+  paymentType: {
+    fontSize: 12,
+    color: '#666',
+  },
+  paymentRight: {
+    alignItems: 'flex-end',
+  },
   paymentAmount: {
     fontSize: 16,
     fontWeight: '600',
     color: '#61a3d2',
+    marginBottom: 5,
   },
   paymentStatus: {
     backgroundColor: '#e8f5e8',
@@ -445,6 +566,137 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#555',
     lineHeight: 18,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  paymentDetails: {
+    backgroundColor: '#f8f9fa',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  paymentAmount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#61a3d2',
+    marginBottom: 5,
+  },
+  paymentDescription: {
+    fontSize: 14,
+    color: '#666',
+  },
+  featurePreview: {
+    backgroundColor: '#e8f5e8',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  featurePreviewTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2e7d32',
+    marginBottom: 8,
+  },
+  featurePreviewItem: {
+    fontSize: 12,
+    color: '#2e7d32',
+    marginBottom: 4,
+  },
+  featurePreviewMore: {
+    fontSize: 11,
+    color: '#2e7d32',
+    fontStyle: 'italic',
+    marginTop: 5,
+  },
+  warningBox: {
+    backgroundColor: '#ffebee',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#d32f2f',
+  },
+  warningTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#d32f2f',
+    marginBottom: 8,
+  },
+  warningItem: {
+    fontSize: 12,
+    color: '#d32f2f',
+    marginBottom: 4,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalCancelButton: {
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 10,
+    flex: 1,
+    marginRight: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  modalCancelText: {
+    color: '#666',
+    fontWeight: '500',
+  },
+  modalConfirmButton: {
+    backgroundColor: '#61a3d2',
+    padding: 15,
+    borderRadius: 10,
+    flex: 1,
+    marginLeft: 10,
+    alignItems: 'center',
+  },
+  modalConfirmCancelButton: {
+    backgroundColor: '#d32f2f',
+    padding: 15,
+    borderRadius: 10,
+    flex: 1,
+    marginLeft: 10,
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontWeight: '500',
   },
 });
 
