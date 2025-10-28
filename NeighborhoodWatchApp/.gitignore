@@ -1,0 +1,6 @@
+# Root .gitignore
+backend/.env
+backend/__pycache__/
+frontend/node_modules/
+*.pyc
+*.sqlite3
