@@ -16,32 +16,30 @@ const LoginScreen = ({ navigation }) => {
 
     // Simulate API call delay
     setTimeout(() => {
-      // Mock successful login
       Alert.alert('Success', 'Mock login successful!');
       navigation.navigate('Home', {
         token: 'mock-token-12345',
         user: { 
           email: email, 
-          full_name: 'Demo User',
-          is_approved: true
+          full_name: 'Demo User'
         }
       });
       setIsLoading(false);
-    }, 1500);
+    }, 1000);
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.logoContainer}>
+      {/* Compact Header */}
+      <View style={styles.header}>
         <Text style={styles.shieldIcon}>🛡️</Text>
         <Text style={styles.appName}>Neighborhood Watch</Text>
-        <Text style={styles.appTagline}>Community Security</Text>
       </View>
 
-      <View style={styles.formContainer}>
+      {/* Compact Form */}
+      <View style={styles.form}>
         <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Sign in to your account</Text>
-
+        
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -49,23 +47,22 @@ const LoginScreen = ({ navigation }) => {
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
-          editable={!isLoading}
         />
+        
         <TextInput
           style={styles.input}
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
-          editable={!isLoading}
         />
 
         <TouchableOpacity style={styles.forgotPassword}>
-          <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          <Text style={styles.forgotText}>Forgot password?</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
+          style={styles.button}
           onPress={handleLogin}
           disabled={isLoading}
         >
@@ -77,10 +74,9 @@ const LoginScreen = ({ navigation }) => {
         <TouchableOpacity
           style={styles.signupLink}
           onPress={() => navigation.navigate('Signup')}
-          disabled={isLoading}
         >
           <Text style={styles.signupText}>
-            New to Neighborhood Watch? <Text style={styles.signupBold}>Sign Up</Text>
+            New user? <Text style={styles.signupBold}>Sign Up</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -89,89 +85,78 @@ const LoginScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: '#fff',
-    padding: 20,
+    padding: 15,
+    justifyContent: 'center',
   },
-  logoContainer: {
+  header: {
     alignItems: 'center',
-    marginTop: 60,
-    marginBottom: 40,
+    marginBottom: 30,
   },
   shieldIcon: {
-    fontSize: 80,
+    fontSize: 50,
     color: '#61a3d2',
-    marginBottom: 15,
+    marginBottom: 8,
   },
   appName: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
     color: '#333',
-    marginBottom: 5,
+    textAlign: 'center',
   },
-  appTagline: {
-    fontSize: 16,
-    color: '#61a3d2',
-    fontWeight: '500',
-  },
-  formContainer: {
-    flex: 1,
+  form: {
+    width: '100%',
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 20,
     textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  input: { 
-    width: '100%', 
-    padding: 16, 
-    marginVertical: 8, 
-    borderWidth: 1, 
-    borderColor: '#e0e0e0', 
-    borderRadius: 12,
+  input: {
+    width: '100%',
+    padding: 10,
+    marginVertical: 6,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 6,
     backgroundColor: '#fafafa',
-    fontSize: 16,
+    fontSize: 14,
+    height: 40,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginBottom: 20,
+    marginBottom: 15,
+    marginTop: 5,
   },
-  forgotPasswordText: {
+  forgotText: {
     color: '#61a3d2',
+    fontSize: 12,
+  },
+  button: {
+    width: '100%',
+    padding: 10,
+    backgroundColor: '#61a3d2',
+    borderRadius: 6,
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
     fontSize: 14,
   },
-  button: { 
-    width: '100%', 
-    padding: 16, 
-    backgroundColor: '#61a3d2', 
-    borderRadius: 12, 
-    marginTop: 10, 
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#cccccc',
-  },
-  buttonText: { 
-    color: '#fff', 
-    fontWeight: '600',
-    fontSize: 16,
-  },
   signupLink: {
-    marginTop: 25,
+    marginTop: 15,
     alignItems: 'center',
   },
   signupText: {
     color: '#666',
-    fontSize: 14,
+    fontSize: 12,
   },
   signupBold: {
     color: '#61a3d2',
