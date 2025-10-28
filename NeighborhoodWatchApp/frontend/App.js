@@ -104,6 +104,11 @@ const App = () => {
           component={ProfileScreen}
           options={{ title: 'My Profile' }}
         />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{ title: 'Settings' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
