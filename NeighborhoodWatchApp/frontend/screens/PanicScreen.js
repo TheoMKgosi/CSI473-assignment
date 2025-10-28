@@ -1,63 +1,183 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import * as Location from 'expo-location';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-export default function PanicScreen() {
-  const [loading, setLoading] = useState(false);
+const PatrolStatsScreen = () => {
+  const [stats, setStats] = useState({ 
+    completed: 0, 
+    response_time: 'N/A',
+    coverage: 0,
+    incidents: 0
+  });
 
-  const trigger = async () => {
-    setLoading(true);
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Location is required for emergency alerts.');
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    // Mock stats
+    setStats({
+      completed: 12,
+      response_time: '4.2 min',
+      coverage: 85,
+      incidents: 2
+    });
+  }, []);
 
-    try {
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const { latitude, longitude } = loc.coords;
-
-      // Mock backend call – replace with real axios later
-      console.log('Panic sent:', { latitude, longitude });
-
-      Alert.alert(
-        'Emergency Sent',
-        `Location shared:\nLat ${latitude.toFixed(6)}\nLng ${longitude.toFixed(6)}`
-      );
-    } catch (e) {
-      Alert.alert('Error', 'Could not get location.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const statCards = [
+    {
+      title: 'Patrols Completed',
+      value: stats.completed,
+      icon: '🛡️',
+      color: '#61a3d2'
+    },
+    {
+      title: 'Avg Response Time',
+      value: stats.response_time,
+      icon: '⏱️',
+      color: '#4CAF50'
+    },
+    {
+      title: 'Area Coverage',
+      value: `${stats.coverage}%`,
+      icon: '🗺️',
+      color: '#FF9800'
+    },
+    {
+      title: 'Incidents Reported',
+      value: stats.incidents,
+      icon: '📝',
+      color: '#F44336'
+    },
+  ];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Emergency Alert</Text>
-      <Text style={styles.desc}>
-        Tap below to instantly alert responders with your **real-time GPS location**.
-      </Text>
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Security Dashboard</Text>
+        <Text style={styles.subtitle}>Real-time patrol statistics</Text>
+      </View>
 
-      <TouchableOpacity
-        style={[styles.btn, loading && styles.btnDisabled]}
-        onPress={trigger}
-        disabled={loading}
-      >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>TRIGGER EMERGENCY</Text>}
-      </TouchableOpacity>
+      <View style={styles.statsGrid}>
+        {statCards.map((stat, index) => (
+          <View key={index} style={styles.statCard}>
+            <View style={[styles.statIcon, { backgroundColor: `${stat.color}20` }]}>
+              <Text style={styles.icon}>{stat.icon}</Text>
+            </View>
+            <Text style={styles.statValue}>{stat.value}</Text>
+            <Text style={styles.statLabel}>{stat.title}</Text>
+          </View>
+        ))}
+      </View>
 
-      <Text style={styles.footer}>Your coordinates are sent securely.</Text>
-    </View>
+      <View style={styles.reportSection}>
+        <Text style={styles.sectionTitle}>Monthly Summary</Text>
+        <View style={styles.reportCard}>
+          <Text style={styles.reportText}>✅ All patrol routes completed on schedule</Text>
+          <Text style={styles.reportText}>📊 Response time improved by 12% this month</Text>
+          <Text style={styles.reportText}>👥 45 active community participants</Text>
+        </View>
+      </View>
+
+      <Text style={styles.updateNote}>Last updated: Today at 14:30</Text>
+    </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 28, color: '#d32f2f', marginBottom: 20 },
-  desc: { textAlign: 'center', fontSize: 16, marginBottom: 40, paddingHorizontal: 20 },
-  btn: { backgroundColor: '#d32f2f', paddingVertical: 25, paddingHorizontal: 40, borderRadius: 50, marginVertical: 30, minWidth: 220, alignItems: 'center' },
-  btnDisabled: { backgroundColor: '#999' },
-  btnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  footer: { textAlign: 'center', color: '#888', fontSize: 12, marginTop: 20 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f8f9fa',
+    padding: 20,
+  },
+  header: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 15,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  title: { 
+    fontSize: 24, 
+    fontWeight: '600', 
+    color: '#333',
+    marginBottom: 5,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  statCard: {
+    backgroundColor: '#fff',
+    width: '48%',
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  icon: {
+    fontSize: 20,
+  },
+  statValue: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: '#333',
+    marginBottom: 5,
+  },
+  statLabel: { 
+    fontSize: 12, 
+    color: '#666',
+    textAlign: 'center',
+  },
+  reportSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  reportCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  reportText: {
+    fontSize: 14,
+    color: '#444',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  updateNote: { 
+    textAlign: 'center', 
+    color: '#888', 
+    fontSize: 12, 
+    marginTop: 10,
+  },
 });
+
+export default PatrolStatsScreen;
