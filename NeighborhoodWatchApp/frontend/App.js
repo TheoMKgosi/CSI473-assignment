@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import * as Font from 'expo-font';
 import { View, Text, StatusBar } from 'react-native';
 
 import LoginScreen from './screens/LoginScreen';
@@ -14,22 +15,28 @@ import SubscriptionScreen from './screens/SubscriptionScreen';
 const Stack = createStackNavigator();
 
 const App = () => {
-  const [isReady, setIsReady] = useState(false);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  const loadFonts = async () => {
+    try {
+      await Font.loadAsync({
+        Inter: require('./assets/fonts/Inter-Regular.ttf'),
+      });
+    } catch (error) {
+      console.log('Font load failed, using fallback:', error);
+    } finally {
+      setFontsLoaded(true);
+    }
+  };
 
   useEffect(() => {
-    // Simulate app initialization
-    const timer = setTimeout(() => {
-      setIsReady(true);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    loadFonts();
   }, []);
 
-  if (!isReady) {
+  if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <Text style={{ fontSize: 18, fontWeight: '600' }}>Neighborhood Watch</Text>
-        <Text style={{ marginTop: 10, color: '#61a3d2' }}>Loading...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
       </View>
     );
   }
