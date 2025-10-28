@@ -6,7 +6,8 @@
     "start": "expo start --tunnel --port 8081",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:apk": "expo build:android"
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
