@@ -67,6 +67,8 @@ REST_FRAMEWORK = {
 
 # FIX CSRF AND CORS SETTINGS
 CORS_ALLOWED_ORIGINS = [
+    "https://super-palm-tree-69499prjx6rp24xg7-8081.app.github.dev",
+    "https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev",
     "http://localhost:8081",
     "https://localhost:8081",
     "http://127.0.0.1:8081",
@@ -77,6 +79,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://super-palm-tree-69499prjx6rp24xg7-8081.app.github.dev",
+    "https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev",
     "http://localhost:8081",
     "https://localhost:8081", 
     "http://127.0.0.1:8081",
