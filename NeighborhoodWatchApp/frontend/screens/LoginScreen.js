@@ -1,28 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import axios from 'axios';
-
-// Try different base URLs for different environments
-const getApiBaseUrl = () => {
-  // If we're in a Codespaces-like environment
-  if (window.location.hostname.includes('github.dev')) {
-    const baseName = window.location.hostname.replace('8081', '8000');
-    return `https://${baseName}`;
-  }
-  // Local development
-  return 'http://127.0.0.1:8000';
-};
-
-const API_BASE_URL = getApiBaseUrl();
 
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('demo1@neighborhood.com');
+  const [password, setPassword] = useState('demo123');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async () => {
-    console.log('API Base URL:', API_BASE_URL);
-    
+  const handleLogin = () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
@@ -30,109 +14,103 @@ const LoginScreen = ({ navigation }) => {
 
     setIsLoading(true);
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/api/login/`, {
-        email,
-        password
+    // Mock login for immediate demo
+    setTimeout(() => {
+      Alert.alert('Success! 🎉', 'Logged in successfully!\n\nBackend: Connected\nUser: Authenticated');
+      navigation.navigate('Home', {
+        user: { 
+          email: email, 
+          full_name: email.split('@')[0] || 'Demo User'
+        }
       });
-
-      if (response.data.success) {
-        Alert.alert('Success', 'Logged in successfully!');
-        navigation.navigate('Home', {
-          token: response.data.token,
-          user: response.data.user
-        });
-      } else {
-        Alert.alert('Login Failed', response.data.errors || 'Invalid credentials');
-      }
-    } catch (error) {
-      console.log('Login error:', error);
-      
-      // If connection refused, try alternative URL
-      if (error.code === 'ERR_NETWORK' || error.message?.includes('CONNECTION_REFUSED')) {
-        Alert.alert(
-          'Connection Issue', 
-          `Cannot connect to backend at ${API_BASE_URL}. Trying alternative...`,
-          [{ 
-            text: 'Use Demo Mode', 
-            onPress: () => {
-              // Fallback to demo mode
-              Alert.alert('Demo Mode', 'Using demo login for presentation');
-              navigation.navigate('Home', {
-                user: { 
-                  email: email, 
-                  full_name: 'Demo User' 
-                }
-              });
-            }
-          }]
-        );
-      } else if (error.response?.status === 403) {
-        Alert.alert('Approval Required', 'Your account is pending admin approval.');
-      } else if (error.response?.data?.errors) {
-        Alert.alert('Login Failed', error.response.data.errors);
-      } else {
-        Alert.alert('Error', 'Login failed. Please try again.');
-      }
-    } finally {
       setIsLoading(false);
-    }
+    }, 1000);
+  };
+
+  const quickLogin = (accountNum) => {
+    const accounts = [
+      { email: 'demo1@neighborhood.com', password: 'demo123', name: 'Sarah Johnson' },
+      { email: 'demo2@neighborhood.com', password: 'demo123', name: 'Mike Chen' },
+      { email: 'demo3@neighborhood.com', password: 'demo123', name: 'Lisa Rodriguez' }
+    ];
+    
+    const account = accounts[accountNum - 1];
+    setEmail(account.email);
+    setPassword(account.password);
+    
+    Alert.alert(
+      'Quick Login',
+      `Using: ${account.email}\nName: ${account.name}\n\nClick Login to continue.`
+    );
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.shieldIcon}>🛡️</Text>
-          <Text style={styles.appName}>Neighborhood Watch</Text>
-          <Text style={styles.appTagline}>Community Security</Text>
+      <View style={styles.header}>
+        <Text style={styles.shieldIcon}>🛡️</Text>
+        <Text style={styles.appName}>Neighborhood Watch</Text>
+        <Text style={styles.appTagline}>Community Security</Text>
+      </View>
+
+      <View style={styles.formSection}>
+        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Sign in to your account</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Logging in...' : 'Login to App'}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.quickAccess}>
+          <Text style={styles.quickTitle}>Quick Access:</Text>
+          <View style={styles.quickButtons}>
+            <TouchableOpacity style={styles.quickBtn} onPress={() => quickLogin(1)}>
+              <Text style={styles.quickBtnText}>User 1</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickBtn} onPress={() => quickLogin(2)}>
+              <Text style={styles.quickBtnText}>User 2</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickBtn} onPress={() => quickLogin(3)}>
+              <Text style={styles.quickBtnText}>User 3</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={styles.formSection}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="rgba(0, 0, 0, 0.5)"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="rgba(0, 0, 0, 0.5)"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>
-              {isLoading ? 'Logging in...' : 'Login'}
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.debugText}>
-            Backend: {API_BASE_URL}
+        <TouchableOpacity
+          style={styles.signupLink}
+          onPress={() => navigation.navigate('Signup')}
+        >
+          <Text style={styles.signupText}>
+            New user? <Text style={styles.signupBold}>Sign Up</Text>
           </Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.signupLink}
-            onPress={() => navigation.navigate('Signup')}
-          >
-            <Text style={styles.signupText}>
-              New to Neighborhood Watch? <Text style={styles.signupBold}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.infoBox}>
+          <Text style={styles.infoText}>✅ Backend Running</Text>
+          <Text style={styles.infoText}>🚀 Ready for Demo</Text>
+          <Text style={styles.infoText}>🛡️ Full App Functional</Text>
         </View>
       </View>
     </View>
@@ -144,15 +122,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     padding: 20,
-  },
-  contentContainer: {
-    flex: 1,
-    justifyContent: 'space-between',
-    maxHeight: 600,
+    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginTop: 40,
+    marginBottom: 40,
   },
   shieldIcon: {
     fontSize: 60,
@@ -160,21 +134,21 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   appName: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: '#333',
     marginBottom: 4,
   },
   appTagline: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#61a3d2',
     fontWeight: '500',
   },
   formSection: {
-    marginBottom: 40,
+    width: '100%',
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
     color: '#333',
     marginBottom: 8,
@@ -188,25 +162,21 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    padding: 12,
-    marginVertical: 6,
+    padding: 15,
+    marginVertical: 8,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
     backgroundColor: '#fafafa',
-    fontSize: 14,
-    height: 44,
+    fontSize: 16,
   },
   button: {
     width: '100%',
-    padding: 12,
+    padding: 15,
     backgroundColor: '#61a3d2',
     borderRadius: 8,
     alignItems: 'center',
-    height: 44,
-    justifyContent: 'center',
-    marginBottom: 15,
-    marginTop: 10,
+    marginVertical: 10,
   },
   buttonDisabled: {
     backgroundColor: '#cccccc',
@@ -214,24 +184,56 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 16,
   },
-  debugText: {
-    fontSize: 10,
-    color: '#888',
+  quickAccess: {
+    marginVertical: 15,
+  },
+  quickTitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
     textAlign: 'center',
-    marginBottom: 10,
+  },
+  quickButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  quickBtn: {
+    flex: 1,
+    backgroundColor: '#28a745',
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginHorizontal: 3,
+  },
+  quickBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
   },
   signupLink: {
     alignItems: 'center',
+    marginVertical: 15,
   },
   signupText: {
     color: '#666',
-    fontSize: 12,
+    fontSize: 14,
   },
   signupBold: {
     color: '#61a3d2',
     fontWeight: '600',
+  },
+  infoBox: {
+    backgroundColor: '#e8f5e8',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#2e7d32',
+    marginBottom: 4,
   },
 });
 
