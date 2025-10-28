@@ -1,35 +1,36 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
-import axios from 'axios';
-
-const API_URL = 'https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev/api';
 
 const SignupScreen = ({ navigation }) => {
   const [form, setForm] = useState({
-    full_name: '', 
-    email: '', 
-    password: '', 
-    phone: '', 
-    address: ''
+    full_name: '', email: '', password: '', phone: '', address: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async () => {
-    try {
-      await axios.post(`${API_URL}/signup/`, form);
-      Alert.alert('Success', 'Account created! Awaiting admin approval.');
-      navigation.navigate('Login');
-    } catch (error) {
-      Alert.alert('Error', error.response?.data?.errors || 'Signup failed');
+    // Validate all fields
+    for (const field in form) {
+      if (!form[field].trim()) {
+        Alert.alert('Error', `Please fill in ${field.replace('_', ' ')}`);
+        return;
+      }
     }
+
+    setIsLoading(true);
+
+    // Simulate API call delay
+    setTimeout(() => {
+      Alert.alert(
+        'Success',
+        'Account created successfully! Awaiting admin approval.',
+        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+      );
+      setIsLoading(false);
+    }, 1500);
   };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Blue Shield Logo */}
+    <ScrollView contentContainerStyle={styles.scrollContent}>
       <View style={styles.logoContainer}>
         <Text style={styles.shieldIcon}>🛡️</Text>
         <Text style={styles.appName}>Join Our Community</Text>
@@ -49,11 +50,12 @@ const SignupScreen = ({ navigation }) => {
             onChangeText={(text) => setForm({ ...form, [field]: text })}
             secureTextEntry={field === 'password'}
             keyboardType={
-              field === 'email' ? 'email-address' : 
-              field === 'phone' ? 'phone-pad' : 
+              field === 'email' ? 'email-address' :
+              field === 'phone' ? 'phone-pad' :
               'default'
             }
             autoCapitalize={field === 'email' ? 'none' : 'words'}
+            editable={!isLoading}
           />
         ))}
 
@@ -66,11 +68,21 @@ const SignupScreen = ({ navigation }) => {
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleSignup}>
-          <Text style={styles.buttonText}>Create Account</Text>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleSignup}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Creating Account...' : 'Create Account'}
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.loginLink} onPress={() => navigation.navigate('Login')}>
+        <TouchableOpacity
+          style={styles.loginLink}
+          onPress={() => navigation.navigate('Login')}
+          disabled={isLoading}
+        >
           <Text style={styles.loginText}>
             Already have an account? <Text style={styles.loginBold}>Sign In</Text>
           </Text>
@@ -81,13 +93,10 @@ const SignupScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff',
-  },
   scrollContent: {
     flexGrow: 1,
     padding: 20,
+    backgroundColor: '#fff',
   },
   logoContainer: {
     alignItems: 'center',
@@ -96,11 +105,8 @@ const styles = StyleSheet.create({
   },
   shieldIcon: {
     fontSize: 70,
-    color: '#61a3d2', // Blue color for the shield
+    color: '#61a3d2',
     marginBottom: 12,
-    textShadowColor: 'rgba(97, 163, 210, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
   },
   appName: {
     fontSize: 24,
@@ -168,11 +174,9 @@ const styles = StyleSheet.create({
     borderRadius: 12, 
     marginTop: 10, 
     alignItems: 'center',
-    shadowColor: '#61a3d2',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+  },
+  buttonDisabled: {
+    backgroundColor: '#cccccc',
   },
   buttonText: { 
     color: '#fff', 

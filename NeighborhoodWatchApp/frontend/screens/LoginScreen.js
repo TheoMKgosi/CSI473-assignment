@@ -1,26 +1,37 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import axios from 'axios';
-
-const API_URL = 'https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev/api';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    try {
-      const res = await axios.post(`${API_URL}/login/`, { email, password });
-      Alert.alert('Success', 'Logged in!');
-      navigation.navigate('Home', { token: res.data.token });
-    } catch (error) {
-      Alert.alert('Error', error.response?.data?.errors || 'Login failed');
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
     }
+
+    setIsLoading(true);
+
+    // Simulate API call delay
+    setTimeout(() => {
+      // Mock successful login
+      Alert.alert('Success', 'Mock login successful!');
+      navigation.navigate('Home', {
+        token: 'mock-token-12345',
+        user: { 
+          email: email, 
+          full_name: 'Demo User',
+          is_approved: true
+        }
+      });
+      setIsLoading(false);
+    }, 1500);
   };
 
   return (
     <View style={styles.container}>
-      {/* Blue Shield Logo */}
       <View style={styles.logoContainer}>
         <Text style={styles.shieldIcon}>🛡️</Text>
         <Text style={styles.appName}>Neighborhood Watch</Text>
@@ -31,31 +42,43 @@ const LoginScreen = ({ navigation }) => {
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Sign in to your account</Text>
 
-        <TextInput 
-          style={styles.input} 
-          placeholder="Email" 
-          value={email} 
-          onChangeText={setEmail} 
-          keyboardType="email-address" 
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
           autoCapitalize="none"
+          editable={!isLoading}
         />
-        <TextInput 
-          style={styles.input} 
-          placeholder="Password" 
-          value={password} 
-          onChangeText={setPassword} 
-          secureTextEntry 
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          editable={!isLoading}
         />
 
         <TouchableOpacity style={styles.forgotPassword}>
           <Text style={styles.forgotPasswordText}>Forgot password?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Logging in...' : 'Login'}
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.signupLink} onPress={() => navigation.navigate('Signup')}>
+        <TouchableOpacity
+          style={styles.signupLink}
+          onPress={() => navigation.navigate('Signup')}
+          disabled={isLoading}
+        >
           <Text style={styles.signupText}>
             New to Neighborhood Watch? <Text style={styles.signupBold}>Sign Up</Text>
           </Text>
@@ -78,11 +101,8 @@ const styles = StyleSheet.create({
   },
   shieldIcon: {
     fontSize: 80,
-    color: '#61a3d2', // Blue color for the shield
+    color: '#61a3d2',
     marginBottom: 15,
-    textShadowColor: 'rgba(97, 163, 210, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
   },
   appName: {
     fontSize: 28,
@@ -136,11 +156,9 @@ const styles = StyleSheet.create({
     borderRadius: 12, 
     marginTop: 10, 
     alignItems: 'center',
-    shadowColor: '#61a3d2',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+  },
+  buttonDisabled: {
+    backgroundColor: '#cccccc',
   },
   buttonText: { 
     color: '#fff', 
