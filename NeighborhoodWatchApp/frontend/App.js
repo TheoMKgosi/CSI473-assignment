@@ -43,81 +43,60 @@ const App = () => {
 
   return (
     <NavigationContainer>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" />
       <Stack.Navigator 
         initialRouteName="Login"
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#ffffff', // White background
-            elevation: 2, // Subtle shadow on Android
-            shadowColor: '#000', // Subtle shadow on iOS
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.1,
-            shadowRadius: 2,
+            backgroundColor: '#fff',
+            elevation: 0,
+            shadowOpacity: 0,
           },
-          headerTintColor: '#61a3d2', // Blue back button
+          headerTintColor: '#61a3d2',
           headerTitleStyle: {
             fontWeight: '600',
             fontSize: 18,
-            color: '#333', // Dark title text
           },
-          headerBackTitle: 'Back', // Show "Back" text on iOS
-          headerBackTitleVisible: true,
+          headerBackTitleVisible: false,
         }}
       >
         <Stack.Screen 
           name="Login" 
           component={LoginScreen} 
-          options={{ 
-            headerShown: false 
-          }} 
+          options={{ headerShown: false }} 
         />
         <Stack.Screen 
           name="Signup" 
           component={SignupScreen} 
-          options={{ 
-            headerShown: false 
-          }} 
+          options={{ headerShown: false }} 
         />
         <Stack.Screen 
           name="Home" 
           component={HomeScreen}
           options={{ 
             title: 'Dashboard',
-            headerLeft: null, // No back button on Home screen
+            headerLeft: null,
           }} 
         />
         <Stack.Screen 
           name="Forum" 
           component={ForumScreen}
-          options={{ 
-            title: 'Community Forum',
-            headerTintColor: '#61a3d2', // Explicit blue back button
-          }}
+          options={{ title: 'Community Forum' }}
         />
         <Stack.Screen 
           name="PatrolStats" 
           component={PatrolStatsScreen}
-          options={{ 
-            title: 'Patrol Statistics',
-            headerTintColor: '#61a3d2',
-          }}
+          options={{ title: 'Patrol Statistics' }}
         />
         <Stack.Screen 
           name="Panic" 
           component={PanicScreen}
-          options={{ 
-            title: 'Emergency Alert',
-            headerTintColor: '#61a3d2',
-          }}
+          options={{ title: 'Emergency Alert' }}
         />
         <Stack.Screen 
           name="Subscription" 
           component={SubscriptionScreen}
-          options={{ 
-            title: 'Subscription',
-            headerTintColor: '#61a3d2',
-          }}
+          options={{ title: 'Subscription' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
