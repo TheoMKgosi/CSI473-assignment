@@ -9,20 +9,28 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation, setIsAuthenticated }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
     
     // Simulate login - in real app, this would call your backend
-    setIsAuthenticated(true);
-    Alert.alert('Success', 'Logged in successfully!');
+    try {
+      // store a demo token so RootLayout picks up authenticated state
+      await AsyncStorage.setItem('token', 'demo-token');
+      Alert.alert('Success', 'Logged in successfully!');
+      // navigate to tabs index
+      navigation.replace('(tabs)/index');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save session');
+    }
   };
 
   return (
@@ -56,7 +64,7 @@ const LoginScreen = ({ navigation, setIsAuthenticated }) => {
         
         <TouchableOpacity 
           style={styles.signUpLink}
-          onPress={() => navigation.navigate('SignUp')}
+          onPress={() => navigation.navigate('(auth)/signup')}
         >
           <Text style={styles.signUpText}>
             Don't have an account? Sign Up

@@ -39,9 +39,9 @@ const SignUpScreen = ({ navigation }) => {
       return;
     }
     
-    // Simulate signup - in real app, this would call your backend
-    Alert.alert('Success', 'Account created successfully! Please login.');
-    navigation.navigate('Login');
+  // Simulate signup - in real app, this would call your backend
+  Alert.alert('Success', 'Account created successfully! Please login.');
+  navigation.navigate('(auth)/login');
   };
 
   const updateFormData = (field, value) => {
@@ -113,7 +113,7 @@ const SignUpScreen = ({ navigation }) => {
         
         <TouchableOpacity 
           style={styles.loginLink}
-          onPress={() => navigation.navigate('Login')}
+          onPress={() => navigation.navigate('(auth)/login')}
         >
           <Text style={styles.loginText}>
             Already have an account? Login
