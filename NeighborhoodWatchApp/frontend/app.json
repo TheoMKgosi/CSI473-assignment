@@ -1,71 +1,32 @@
 {
   "expo": {
-    "name": "Neighborhood Watch",
-    "slug": "neighborhood-watch-security",
+    "name": "frontend",
+    "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.neighborhoodwatch.security",
-      "buildNumber": "1.0.0",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app uses your location to provide emergency services and neighborhood security alerts.",
-        "NSLocationAlwaysUsageDescription": "This app uses your location to provide emergency services even when the app is closed."
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#61a3d2"
+        "backgroundColor": "#ffffff"
       },
-      "package": "com.neighborhoodwatch.security",
-      "versionCode": 1,
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
-      ]
+      "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0"
-          },
-          "ios": {
-            "deploymentTarget": "13.0"
-          }
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow Neighborhood Watch to use your location for emergency services and security alerts."
-        }
-      ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "your-project-id-here"
-      }
-    }
+      "expo-font"
+    ]
   }
 }
