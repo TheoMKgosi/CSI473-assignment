@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'rea
 const SubscriptionScreen = () => {
   const [status, setStatus] = useState('active');
   const [plan, setPlan] = useState('premium');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const handlePayment = (amount) => {
     Alert.alert(
@@ -17,6 +18,7 @@ const SubscriptionScreen = () => {
           onPress: () => {
             Alert.alert('Success', `Payment of P${amount} processed successfully!`);
             setStatus('active');
+            setPlan('premium');
           },
         },
       ]
@@ -34,10 +36,19 @@ const SubscriptionScreen = () => {
           style: 'destructive',
           onPress: () => {
             setStatus('cancelled');
+            setPlan('basic');
             Alert.alert('Cancelled', 'Your subscription has been cancelled.');
           },
         },
       ]
+    );
+  };
+
+  const toggleNotifications = () => {
+    setNotificationsEnabled(!notificationsEnabled);
+    Alert.alert(
+      'Notifications', 
+      `Push notifications ${!notificationsEnabled ? 'enabled' : 'disabled'}`
     );
   };
 
@@ -47,19 +58,25 @@ const SubscriptionScreen = () => {
       price: 'Free',
       features: ['Basic alerts', 'Community forum access', 'Limited patrol stats', 'Email support'],
       icon: '🔓',
-      active: false
+      active: plan === 'basic'
     },
     {
       name: 'Premium',
       price: 'P100/month',
       features: ['Real-time alerts', 'Full patrol statistics', 'Priority support', 'Emergency SOS', 'Advanced analytics', '24/7 monitoring'],
       icon: '⭐',
-      active: true
+      active: plan === 'premium'
     },
   ];
 
+  const paymentHistory = [
+    { id: 1, date: 'Oct 28, 2024', amount: 'P100', status: 'Completed' },
+    { id: 2, date: 'Sep 28, 2024', amount: 'P100', status: 'Completed' },
+    { id: 3, date: 'Aug 28, 2024', amount: 'P100', status: 'Completed' },
+  ];
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
         <Text style={styles.title}>Subscription Management</Text>
         <View style={[styles.statusBadge, status === 'active' ? styles.activeBadge : styles.cancelledBadge]}>
@@ -71,21 +88,21 @@ const SubscriptionScreen = () => {
 
       <View style={styles.plansSection}>
         <Text style={styles.sectionTitle}>Available Plans</Text>
-        {plans.map((plan, index) => (
+        {plans.map((planItem, index) => (
           <View 
             key={index} 
             style={[
               styles.planCard, 
-              plan.active && styles.activePlanCard
+              planItem.active && styles.activePlanCard
             ]}
           >
             <View style={styles.planHeader}>
-              <Text style={styles.planIcon}>{plan.icon}</Text>
-              <View>
-                <Text style={styles.planName}>{plan.name}</Text>
-                <Text style={styles.planPrice}>{plan.price}</Text>
+              <Text style={styles.planIcon}>{planItem.icon}</Text>
+              <View style={styles.planInfo}>
+                <Text style={styles.planName}>{planItem.name}</Text>
+                <Text style={styles.planPrice}>{planItem.price}</Text>
               </View>
-              {plan.active && (
+              {planItem.active && (
                 <View style={styles.currentPlanBadge}>
                   <Text style={styles.currentPlanText}>Current Plan</Text>
                 </View>
@@ -93,19 +110,19 @@ const SubscriptionScreen = () => {
             </View>
             
             <View style={styles.featuresList}>
-              {plan.features.map((feature, featureIndex) => (
+              {planItem.features.map((feature, featureIndex) => (
                 <Text key={featureIndex} style={styles.featureItem}>
                   ✓ {feature}
                 </Text>
               ))}
             </View>
 
-            {!plan.active && plan.name === 'Premium' && status === 'cancelled' && (
+            {!planItem.active && planItem.name === 'Premium' && (
               <TouchableOpacity 
                 style={styles.subscribeButton}
                 onPress={() => handlePayment(100)}
               >
-                <Text style={styles.subscribeText}>Subscribe Now</Text>
+                <Text style={styles.subscribeText}>Upgrade to Premium</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -133,6 +150,39 @@ const SubscriptionScreen = () => {
         </View>
       )}
 
+      <View style={styles.settingsSection}>
+        <Text style={styles.sectionTitle}>Notification Settings</Text>
+        <View style={styles.settingItem}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingTitle}>Push Notifications</Text>
+            <Text style={styles.settingDescription}>Receive instant security alerts</Text>
+          </View>
+          <TouchableOpacity 
+            style={[styles.toggleButton, notificationsEnabled && styles.toggleButtonActive]}
+            onPress={toggleNotifications}
+          >
+            <Text style={styles.toggleText}>
+              {notificationsEnabled ? 'ON' : 'OFF'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.paymentSection}>
+        <Text style={styles.sectionTitle}>Payment History</Text>
+        {paymentHistory.map((payment) => (
+          <View key={payment.id} style={styles.paymentItem}>
+            <View style={styles.paymentInfo}>
+              <Text style={styles.paymentDate}>{payment.date}</Text>
+              <Text style={styles.paymentAmount}>{payment.amount}</Text>
+            </View>
+            <View style={[styles.statusBadge, styles.paymentStatus]}>
+              <Text style={styles.statusText}>{payment.status}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>💡 Subscription Info</Text>
         <Text style={styles.infoText}>
@@ -152,6 +202,9 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#f8f9fa',
+  },
+  scrollContent: {
+    paddingBottom: 30,
   },
   header: {
     backgroundColor: '#fff',
@@ -220,6 +273,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginRight: 12,
   },
+  planInfo: {
+    flex: 1,
+  },
   planName: {
     fontSize: 18,
     fontWeight: '600',
@@ -235,7 +291,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 8,
-    marginLeft: 'auto',
   },
   currentPlanText: {
     color: '#fff',
@@ -294,6 +349,84 @@ const styles = StyleSheet.create({
   cancelText: {
     color: '#d32f2f',
     fontWeight: '500',
+  },
+  settingsSection: {
+    marginBottom: 20,
+    paddingHorizontal: 15,
+  },
+  settingItem: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  settingInfo: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 2,
+  },
+  settingDescription: {
+    fontSize: 12,
+    color: '#666',
+  },
+  toggleButton: {
+    backgroundColor: '#e0e0e0',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 15,
+  },
+  toggleButtonActive: {
+    backgroundColor: '#61a3d2',
+  },
+  toggleText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  paymentSection: {
+    marginBottom: 20,
+    paddingHorizontal: 15,
+  },
+  paymentItem: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  paymentInfo: {
+    flex: 1,
+  },
+  paymentDate: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  paymentAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#61a3d2',
+  },
+  paymentStatus: {
+    backgroundColor: '#e8f5e8',
   },
   infoCard: {
     backgroundColor: '#e3f2fd',
