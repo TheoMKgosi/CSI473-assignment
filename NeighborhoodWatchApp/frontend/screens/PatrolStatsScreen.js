@@ -10,7 +10,6 @@ const PatrolStatsScreen = () => {
   });
 
   useEffect(() => {
-    // Mock stats
     setStats({
       completed: 12,
       response_time: '4.2 min',
@@ -71,6 +70,8 @@ const PatrolStatsScreen = () => {
           <Text style={styles.reportText}>✅ All patrol routes completed on schedule</Text>
           <Text style={styles.reportText}>📊 Response time improved by 12% this month</Text>
           <Text style={styles.reportText}>👥 45 active community participants</Text>
+          <Text style={styles.reportText}>🛡️ 98% of residents feel safer this month</Text>
+          <Text style={styles.reportText}>📱 App usage increased by 25%</Text>
         </View>
       </View>
 
@@ -83,12 +84,10 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#f8f9fa',
-    padding: 20,
   },
   header: {
     backgroundColor: '#fff',
     padding: 20,
-    borderRadius: 15,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -111,6 +110,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 20,
+    paddingHorizontal: 15,
   },
   statCard: {
     backgroundColor: '#fff',
@@ -149,6 +149,7 @@ const styles = StyleSheet.create({
   },
   reportSection: {
     marginBottom: 20,
+    paddingHorizontal: 15,
   },
   sectionTitle: {
     fontSize: 18,
@@ -177,6 +178,7 @@ const styles = StyleSheet.create({
     color: '#888', 
     fontSize: 12, 
     marginTop: 10,
+    marginBottom: 20,
   },
 });
 

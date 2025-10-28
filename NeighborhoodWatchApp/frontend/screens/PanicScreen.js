@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 
 const PanicScreen = () => {
   const [isPressed, setIsPressed] = useState(false);
@@ -23,10 +23,12 @@ const PanicScreen = () => {
     { name: 'Local Police', number: '999', icon: '👮' },
     { name: 'Security Base', number: '+267-123-4567', icon: '🏢' },
     { name: 'Medical Emergency', number: '997', icon: '🏥' },
+    { name: 'Fire Department', number: '998', icon: '🚒' },
+    { name: 'Neighborhood Watch', number: '+267-765-4321', icon: '🛡️' },
   ];
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Emergency Alert System</Text>
         <Text style={styles.subtitle}>For immediate security threats</Text>
@@ -68,7 +70,7 @@ const PanicScreen = () => {
       <Text style={styles.footerNote}>
         Your safety is our priority. Use responsibly.
       </Text>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -76,12 +78,10 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#f8f9fa',
-    padding: 20,
   },
   header: {
     backgroundColor: '#fff',
     padding: 20,
-    borderRadius: 15,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -102,7 +102,6 @@ const styles = StyleSheet.create({
   alertSection: {
     backgroundColor: '#fff',
     padding: 20,
-    borderRadius: 15,
     marginBottom: 20,
     alignItems: 'center',
     shadowColor: '#000',
@@ -157,6 +156,7 @@ const styles = StyleSheet.create({
   },
   contactsSection: {
     marginBottom: 20,
+    paddingHorizontal: 15,
   },
   sectionTitle: {
     fontSize: 18,
@@ -210,6 +210,9 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 12,
     fontStyle: 'italic',
+    marginTop: 10,
+    marginBottom: 20,
+    paddingHorizontal: 15,
   },
 });
 

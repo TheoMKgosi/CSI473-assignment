@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, ScrollView } from 'react-native';
 
 const ForumScreen = ({ navigation }) => {
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState('');
 
   useEffect(() => {
-    // Mock initial posts
     setPosts([
       { id: 1, user: { email: 'alice@example.com' }, content: 'Suspicious activity near Park St. around 8 PM yesterday.', likes: 3, time: '2 hours ago' },
       { id: 2, user: { email: 'bob@example.com' }, content: 'Lost golden retriever spotted on Main Rd. Very friendly!', likes: 1, time: '5 hours ago' },
       { id: 3, user: { email: 'security@watch.org' }, content: 'Monthly patrol report: All areas covered, no incidents reported.', likes: 8, time: '1 day ago' },
+      { id: 4, user: { email: 'mary@example.com' }, content: 'Community meeting this Friday at 6 PM in the community center.', likes: 5, time: '2 days ago' },
+      { id: 5, user: { email: 'john@example.com' }, content: 'Found a set of keys near the playground. Contact me if they are yours.', likes: 2, time: '3 days ago' },
     ]);
   }, []);
 
@@ -40,7 +41,7 @@ const ForumScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Community Forum</Text>
         <Text style={styles.subtitle}>Stay connected with your neighbors</Text>
@@ -60,11 +61,10 @@ const ForumScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.postCard}>
+      <View style={styles.postsContainer}>
+        <Text style={styles.sectionTitle}>Recent Posts</Text>
+        {posts.map((item) => (
+          <View key={item.id} style={styles.postCard}>
             <View style={styles.postHeader}>
               <Text style={styles.postUser}>{item.user.email}</Text>
               <Text style={styles.postTime}>{item.time}</Text>
@@ -79,10 +79,9 @@ const ForumScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
-        )}
-        ListEmptyComponent={<Text style={styles.empty}>No posts yet. Be the first to share!</Text>}
-      />
-    </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -90,12 +89,10 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#f8f9fa',
-    padding: 20,
   },
   header: {
     backgroundColor: '#fff',
     padding: 20,
-    borderRadius: 15,
     marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -116,7 +113,6 @@ const styles = StyleSheet.create({
   postInputContainer: {
     backgroundColor: '#fff',
     padding: 15,
-    borderRadius: 15,
     marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -144,6 +140,15 @@ const styles = StyleSheet.create({
     color: '#fff', 
     fontWeight: '500',
     fontSize: 14,
+  },
+  postsContainer: {
+    padding: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 15,
   },
   postCard: {
     backgroundColor: '#fff',
@@ -200,12 +205,6 @@ const styles = StyleSheet.create({
   commentText: { 
     color: '#666', 
     fontSize: 12,
-  },
-  empty: { 
-    textAlign: 'center', 
-    color: '#999', 
-    marginTop: 40,
-    fontSize: 14,
   },
 });
 

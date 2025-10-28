@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 
 const SubscriptionScreen = () => {
-  const [status, setStatus] = useState('active'); // active, cancelled
+  const [status, setStatus] = useState('active');
   const [plan, setPlan] = useState('premium');
 
   const handlePayment = (amount) => {
@@ -45,21 +45,21 @@ const SubscriptionScreen = () => {
     {
       name: 'Basic',
       price: 'Free',
-      features: ['Basic alerts', 'Community forum access', 'Limited patrol stats'],
+      features: ['Basic alerts', 'Community forum access', 'Limited patrol stats', 'Email support'],
       icon: '🔓',
       active: false
     },
     {
       name: 'Premium',
       price: 'P100/month',
-      features: ['Real-time alerts', 'Full patrol statistics', 'Priority support', 'Emergency SOS'],
+      features: ['Real-time alerts', 'Full patrol statistics', 'Priority support', 'Emergency SOS', 'Advanced analytics', '24/7 monitoring'],
       icon: '⭐',
       active: true
     },
   ];
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Subscription Management</Text>
         <View style={[styles.statusBadge, status === 'active' ? styles.activeBadge : styles.cancelledBadge]}>
@@ -139,10 +139,12 @@ const SubscriptionScreen = () => {
           • Auto-renews monthly{'\n'}
           • Cancel anytime{'\n'}
           • 24/7 premium support{'\n'}
-          • Full refund if unsatisfied
+          • Full refund if unsatisfied{'\n'}
+          • Secure payment processing{'\n'}
+          • Instant activation
         </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -150,12 +152,10 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#f8f9fa',
-    padding: 20,
   },
   header: {
     backgroundColor: '#fff',
     padding: 20,
-    borderRadius: 15,
     marginBottom: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -188,6 +188,7 @@ const styles = StyleSheet.create({
   },
   plansSection: {
     marginBottom: 20,
+    paddingHorizontal: 15,
   },
   sectionTitle: {
     fontSize: 18,
@@ -262,6 +263,7 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     marginBottom: 20,
+    paddingHorizontal: 15,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -296,6 +298,8 @@ const styles = StyleSheet.create({
   infoCard: {
     backgroundColor: '#e3f2fd',
     padding: 15,
+    marginHorizontal: 15,
+    marginBottom: 20,
     borderRadius: 15,
   },
   infoTitle: {

@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 
-const HomeScreen = ({ navigation }) => {
-  const user = { email: 'test@example.com', full_name: 'Test User' };
+const HomeScreen = ({ navigation, route }) => {
+  const user = route.params?.user || { email: 'test@example.com', full_name: 'Test User' };
 
   const handleLogout = () => {
     Alert.alert('Logged Out', 'You have been logged out.');
@@ -37,7 +37,7 @@ const HomeScreen = ({ navigation }) => {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
         <Text style={styles.welcome}>Welcome back,</Text>
         <Text style={styles.userName}>{user.full_name}</Text>
@@ -69,7 +69,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  scrollContent: {
     padding: 20,
+    flexGrow: 1,
   },
   header: {
     backgroundColor: '#fff',
