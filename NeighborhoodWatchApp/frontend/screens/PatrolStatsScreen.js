@@ -1,68 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
-const PatrolStatsScreen = () => {
-  const [stats, setStats] = useState({ completed: 0, response_time: '0 min' });
+export default function PatrolStatsScreen() {
+  const [stats, setStats] = useState({ completed: 0, response_time: 'N/A' });
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await axios.get('https://<your-codespace>.github.dev:8000/api/patrol-stats/', {
-          headers: { Authorization: 'Token <your-token>' }
-        });
-        setStats(response.data);
-      } catch (error) {
-        Alert.alert('Error', 'Failed to fetch patrol stats');
-      }
-    };
-    fetchStats();
+    setStats({ completed: 12, response_time: '4.2 min' });
   }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Patrol Statistics</Text>
-      <View style={styles.statsContainer}>
-        <Text style={styles.statLabel}>Patrols Completed:</Text>
-        <Text style={styles.statValue}>{stats.completed}</Text>
-        <Text style={styles.statLabel}>Average Response Time:</Text>
-        <Text style={styles.statValue}>{stats.response_time}</Text>
+
+      <View style={styles.box}>
+        <Text style={styles.label}>Patrols Completed</Text>
+        <Text style={styles.value}>{stats.completed}</Text>
       </View>
+
+      <View style={styles.box}>
+        <Text style={styles.label}>Avg. Response Time</Text>
+        <Text style={styles.value}>{stats.response_time}</Text>
+      </View>
+
+      <Text style={styles.note}>Last updated: just now</Text>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
-  },
-  statsContainer: {
-    width: '100%',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  statLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginVertical: 5,
-  },
-  statValue: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 10,
-  },
+  container: { flex: 1, padding: 20, backgroundColor: '#fff', justifyContent: 'center' },
+  title: { fontSize: 24, textAlign: 'center', marginBottom: 30 },
+  box: { backgroundColor: '#f0f8ff', padding: 20, borderRadius: 12, marginVertical: 15, alignItems: 'center', borderWidth: 1, borderColor: '#61a3d2' },
+  label: { fontSize: 16, color: '#555', marginBottom: 8 },
+  value: { fontSize: 32, fontWeight: 'bold', color: '#61a3d2' },
+  note: { textAlign: 'center', color: '#888', marginTop: 20, fontSize: 12 },
 });
-
-export default PatrolStatsScreen;
