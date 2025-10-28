@@ -98,6 +98,11 @@ const App = () => {
           component={SubscriptionScreen}
           options={{ title: 'Subscription' }}
         />
+        <Stack.Screen 
+          name="Profile" 
+          component={ProfileScreen}
+          options={{ title: 'My Profile' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
