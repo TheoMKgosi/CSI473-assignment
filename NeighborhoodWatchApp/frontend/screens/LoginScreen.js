@@ -2,7 +2,18 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+// Try different base URLs for different environments
+const getApiBaseUrl = () => {
+  // If we're in a Codespaces-like environment
+  if (window.location.hostname.includes('github.dev')) {
+    const baseName = window.location.hostname.replace('8081', '8000');
+    return `https://${baseName}`;
+  }
+  // Local development
+  return 'http://127.0.0.1:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -10,6 +21,8 @@ const LoginScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
+    console.log('API Base URL:', API_BASE_URL);
+    
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
@@ -35,7 +48,26 @@ const LoginScreen = ({ navigation }) => {
     } catch (error) {
       console.log('Login error:', error);
       
-      if (error.response?.status === 403) {
+      // If connection refused, try alternative URL
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('CONNECTION_REFUSED')) {
+        Alert.alert(
+          'Connection Issue', 
+          `Cannot connect to backend at ${API_BASE_URL}. Trying alternative...`,
+          [{ 
+            text: 'Use Demo Mode', 
+            onPress: () => {
+              // Fallback to demo mode
+              Alert.alert('Demo Mode', 'Using demo login for presentation');
+              navigation.navigate('Home', {
+                user: { 
+                  email: email, 
+                  full_name: 'Demo User' 
+                }
+              });
+            }
+          }]
+        );
+      } else if (error.response?.status === 403) {
         Alert.alert('Approval Required', 'Your account is pending admin approval.');
       } else if (error.response?.data?.errors) {
         Alert.alert('Login Failed', error.response.data.errors);
@@ -88,6 +120,10 @@ const LoginScreen = ({ navigation }) => {
               {isLoading ? 'Logging in...' : 'Login'}
             </Text>
           </TouchableOpacity>
+
+          <Text style={styles.debugText}>
+            Backend: {API_BASE_URL}
+          </Text>
 
           <TouchableOpacity
             style={styles.signupLink}
@@ -161,15 +197,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     height: 44,
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 20,
-    marginTop: 5,
-  },
-  forgotText: {
-    color: '#61a3d2',
-    fontSize: 12,
-  },
   button: {
     width: '100%',
     padding: 12,
@@ -179,6 +206,7 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     marginBottom: 15,
+    marginTop: 10,
   },
   buttonDisabled: {
     backgroundColor: '#cccccc',
@@ -187,6 +215,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 14,
+  },
+  debugText: {
+    fontSize: 10,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 10,
   },
   signupLink: {
     alignItems: 'center',

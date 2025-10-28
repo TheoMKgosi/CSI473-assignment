@@ -100,7 +100,6 @@ const SignupScreen = ({ navigation }) => {
   );
 };
 
-// ... keep your existing styles
 const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
