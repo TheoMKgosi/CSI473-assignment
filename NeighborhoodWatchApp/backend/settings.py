@@ -65,7 +65,10 @@ REST_FRAMEWORK = {
     ],
 }
 
-# FIX CSRF AND CORS SETTINGS
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOWED_ORIGINS = [
     "https://super-palm-tree-69499prjx6rp24xg7-8081.app.github.dev",
     "https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev",
@@ -73,10 +76,9 @@ CORS_ALLOWED_ORIGINS = [
     "https://localhost:8081",
     "http://127.0.0.1:8081",
     "https://127.0.0.1:8081",
+    "http://0.0.0.0:8081",
+    "https://0.0.0.0:8081",
 ]
-
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://super-palm-tree-69499prjx6rp24xg7-8081.app.github.dev",
@@ -85,13 +87,35 @@ CSRF_TRUSTED_ORIGINS = [
     "https://localhost:8081", 
     "http://127.0.0.1:8081",
     "https://127.0.0.1:8081",
+    "http://0.0.0.0:8081",
+    "https://0.0.0.0:8081",
     "http://localhost:8000",
     "https://localhost:8000",
+    "http://0.0.0.0:8000",
+    "https://0.0.0.0:8000",
 ]
 
-# Disable CSRF for API views (since we're using token auth)
-CSRF_USE_SESSIONS = False
-CSRF_COOKIE_HTTPONLY = False
+# Additional CORS settings
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

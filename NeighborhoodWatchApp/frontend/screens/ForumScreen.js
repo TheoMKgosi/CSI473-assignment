@@ -4,14 +4,22 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, S
 const ForumScreen = ({ navigation }) => {
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState('');
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     setPosts([
-      { id: 1, user: { email: 'alice@example.com' }, content: 'Suspicious activity near Park St. around 8 PM yesterday.', likes: 3, time: '2 hours ago' },
-      { id: 2, user: { email: 'bob@example.com' }, content: 'Lost golden retriever spotted on Main Rd. Very friendly!', likes: 1, time: '5 hours ago' },
-      { id: 3, user: { email: 'security@watch.org' }, content: 'Monthly patrol report: All areas covered, no incidents reported.', likes: 8, time: '1 day ago' },
-      { id: 4, user: { email: 'mary@example.com' }, content: 'Community meeting this Friday at 6 PM in the community center.', likes: 5, time: '2 days ago' },
-      { id: 5, user: { email: 'john@example.com' }, content: 'Found a set of keys near the playground. Contact me if they are yours.', likes: 2, time: '3 days ago' },
+      { id: 1, user: { email: 'alice@example.com' }, content: 'Suspicious activity near Park St. around 8 PM yesterday.', likes: 3, time: '2 hours ago', comments: 2 },
+      { id: 2, user: { email: 'bob@example.com' }, content: 'Lost golden retriever spotted on Main Rd. Very friendly!', likes: 1, time: '5 hours ago', comments: 5 },
+      { id: 3, user: { email: 'security@watch.org' }, content: 'Monthly patrol report: All areas covered, no incidents reported.', likes: 8, time: '1 day ago', comments: 3 },
+      { id: 4, user: { email: 'mary@example.com' }, content: 'Community meeting this Friday at 6 PM in the community center.', likes: 5, time: '2 days ago', comments: 7 },
+      { id: 5, user: { email: 'john@example.com' }, content: 'Found a set of keys near the playground. Contact me if they are yours.', likes: 2, time: '3 days ago', comments: 1 },
+    ]);
+
+    setNotifications([
+      { id: 1, message: 'New post in your neighborhood', time: '5 min ago', read: false },
+      { id: 2, message: 'Security alert: Suspicious activity reported', time: '1 hour ago', read: false },
+      { id: 3, message: 'Community meeting reminder', time: '2 hours ago', read: true },
     ]);
   }, []);
 
@@ -26,12 +34,23 @@ const ForumScreen = ({ navigation }) => {
       user: { email: 'you@example.com' },
       content: content.trim(),
       likes: 0,
-      time: 'Just now'
+      time: 'Just now',
+      comments: 0
     };
 
     setPosts([newPost, ...posts]);
     setContent('');
-    Alert.alert('Posted!', 'Your message is live.');
+    
+    // Simulate push notification
+    const newNotification = {
+      id: Date.now(),
+      message: 'Your post has been published',
+      time: 'Just now',
+      read: false
+    };
+    setNotifications([newNotification, ...notifications]);
+    
+    Alert.alert('Posted!', 'Your message is live. Neighbors will be notified.');
   };
 
   const likePost = (postId) => {
@@ -40,12 +59,57 @@ const ForumScreen = ({ navigation }) => {
     ));
   };
 
+  const addComment = (postId) => {
+    setPosts(posts.map(post => 
+      post.id === postId ? { ...post, comments: post.comments + 1 } : post
+    ));
+    Alert.alert('Comment', 'Comment feature added!');
+  };
+
+  const markNotificationAsRead = (notificationId) => {
+    setNotifications(notifications.map(notif => 
+      notif.id === notificationId ? { ...notif, read: true } : notif
+    ));
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Community Forum</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Community Forum</Text>
+          <TouchableOpacity 
+            style={styles.notificationBell}
+            onPress={() => setShowNotifications(!showNotifications)}
+          >
+            <Text style={styles.bellIcon}>🔔</Text>
+            {unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
         <Text style={styles.subtitle}>Stay connected with your neighbors</Text>
       </View>
+
+      {showNotifications && (
+        <View style={styles.notificationsPanel}>
+          <Text style={styles.notificationsTitle}>Notifications</Text>
+          {notifications.map((notif) => (
+            <TouchableOpacity 
+              key={notif.id} 
+              style={[styles.notificationItem, !notif.read && styles.unreadNotification]}
+              onPress={() => markNotificationAsRead(notif.id)}
+            >
+              <Text style={styles.notificationMessage}>{notif.message}</Text>
+              <Text style={styles.notificationTime}>{notif.time}</Text>
+              {!notif.read && <View style={styles.unreadDot} />}
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       <View style={styles.postInputContainer}>
         <TextInput
@@ -62,20 +126,28 @@ const ForumScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.postsContainer}>
-        <Text style={styles.sectionTitle}>Recent Posts</Text>
+        <Text style={styles.sectionTitle}>Recent Community Posts</Text>
         {posts.map((item) => (
           <View key={item.id} style={styles.postCard}>
             <View style={styles.postHeader}>
-              <Text style={styles.postUser}>{item.user.email}</Text>
-              <Text style={styles.postTime}>{item.time}</Text>
+              <View style={styles.userInfo}>
+                <Text style={styles.postUser}>{item.user.email}</Text>
+                <Text style={styles.postTime}>{item.time}</Text>
+              </View>
+              <TouchableOpacity style={styles.shareButton}>
+                <Text style={styles.shareText}>📤 Share</Text>
+              </TouchableOpacity>
             </View>
             <Text style={styles.postContent}>{item.content}</Text>
             <View style={styles.postFooter}>
               <TouchableOpacity style={styles.likeButton} onPress={() => likePost(item.id)}>
                 <Text style={styles.likeText}>👍 Like ({item.likes})</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.commentButton}>
-                <Text style={styles.commentText}>💬 Comment</Text>
+              <TouchableOpacity style={styles.commentButton} onPress={() => addComment(item.id)}>
+                <Text style={styles.commentText}>💬 Comment ({item.comments})</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton}>
+                <Text style={styles.saveText}>🔖 Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -100,15 +172,88 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
   title: { 
     fontSize: 24, 
     fontWeight: '600', 
     color: '#333',
-    marginBottom: 5,
+  },
+  notificationBell: {
+    position: 'relative',
+    padding: 8,
+  },
+  bellIcon: {
+    fontSize: 20,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#d32f2f',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   subtitle: {
     fontSize: 14,
     color: '#666',
+  },
+  notificationsPanel: {
+    backgroundColor: '#fff',
+    marginHorizontal: 15,
+    marginBottom: 15,
+    borderRadius: 10,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  notificationsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  notificationItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  unreadNotification: {
+    backgroundColor: '#f0f8ff',
+  },
+  notificationMessage: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+  },
+  notificationTime: {
+    fontSize: 12,
+    color: '#666',
+    marginRight: 10,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#61a3d2',
   },
   postInputContainer: {
     backgroundColor: '#fff',
@@ -164,8 +309,11 @@ const styles = StyleSheet.create({
   postHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
+  },
+  userInfo: {
+    flex: 1,
   },
   postUser: { 
     fontWeight: '600', 
@@ -175,6 +323,13 @@ const styles = StyleSheet.create({
   postTime: { 
     color: '#999', 
     fontSize: 12,
+  },
+  shareButton: {
+    padding: 5,
+  },
+  shareText: {
+    fontSize: 12,
+    color: '#666',
   },
   postContent: { 
     fontSize: 14, 
@@ -204,6 +359,16 @@ const styles = StyleSheet.create({
   },
   commentText: { 
     color: '#666', 
+    fontSize: 12,
+  },
+  saveButton: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+    backgroundColor: '#fff0f5',
+  },
+  saveText: { 
+    color: '#e91e63', 
     fontSize: 12,
   },
 });

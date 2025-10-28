@@ -11,6 +11,8 @@ import ForumScreen from './screens/ForumScreen';
 import PatrolStatsScreen from './screens/PatrolStatsScreen';
 import PanicScreen from './screens/PanicScreen';
 import SubscriptionScreen from './screens/SubscriptionScreen';
+import ProfileScreen from './screens/ProfileScreen';
+import SettingsScreen from './screens/SettingsScreen';
 
 const Stack = createStackNavigator();
 
@@ -97,6 +99,16 @@ const App = () => {
           name="Subscription" 
           component={SubscriptionScreen}
           options={{ title: 'Subscription' }}
+        />
+        <Stack.Screen 
+          name="Profile" 
+          component={ProfileScreen}
+          options={{ title: 'My Profile' }}
+        />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{ title: 'Settings' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

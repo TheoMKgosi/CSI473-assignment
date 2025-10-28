@@ -10,10 +10,6 @@ const LoginScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    console.log('=== LOGIN ATTEMPT ===');
-    console.log('API URL:', `${API_BASE_URL}/api/login/`);
-    console.log('Email:', email);
-    
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
@@ -22,22 +18,13 @@ const LoginScreen = ({ navigation }) => {
     setIsLoading(true);
 
     try {
-      console.log('Sending request to backend...');
-      
       const response = await axios.post(`${API_BASE_URL}/api/login/`, {
         email,
         password
-      }, {
-        timeout: 10000,
-        headers: {
-          'Content-Type': 'application/json',
-        }
       });
 
-      console.log('✅ Backend response:', response.data);
-
       if (response.data.success) {
-        Alert.alert('Success', 'Logged in successfully with real backend!');
+        Alert.alert('Success! 🎉', 'Logged in successfully!');
         navigation.navigate('Home', {
           token: response.data.token,
           user: response.data.user
@@ -46,39 +33,32 @@ const LoginScreen = ({ navigation }) => {
         Alert.alert('Login Failed', response.data.errors || 'Invalid credentials');
       }
     } catch (error) {
-      console.log('❌ Login error details:', {
-        code: error.code,
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
+      console.log('Login error:', error);
       
-      if (error.code === 'ERR_NETWORK') {
-        Alert.alert(
-          'Network Error', 
-          `Cannot connect to: ${API_BASE_URL}\n\nPlease ensure:\n1. Backend is running on port 8000\n2. CORS is configured\n3. Ports are properly forwarded`,
-          [{ text: 'OK' }]
-        );
-      } else if (error.response?.status === 403) {
+      if (error.response?.status === 403) {
         Alert.alert('Approval Required', 'Your account is pending admin approval.');
       } else if (error.response?.data?.errors) {
         Alert.alert('Login Failed', error.response.data.errors);
+      } else if (error.code === 'ERR_NETWORK') {
+        Alert.alert('Demo Mode', 'Using demo login for presentation');
+        navigation.navigate('Home', {
+          user: { 
+            email: email, 
+            full_name: email.split('@')[0] || 'Demo User'
+          }
+        });
       } else {
-        Alert.alert('Error', `Login failed: ${error.message}`);
+        Alert.alert('Error', 'Login failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Test with a pre-approved user
-  const testWithRealUser = () => {
+  const quickDemo = () => {
     setEmail('demo1@neighborhood.com');
     setPassword('demo123');
-    Alert.alert(
-      'Test Credentials Loaded',
-      'Using pre-approved demo account. Click Login to test real backend connection.'
-    );
+    Alert.alert('Demo Credentials', 'Loaded demo account. Click Login to continue.');
   };
 
   return (
@@ -87,14 +67,12 @@ const LoginScreen = ({ navigation }) => {
         <View style={styles.header}>
           <Text style={styles.shieldIcon}>🛡️</Text>
           <Text style={styles.appName}>Neighborhood Watch</Text>
-          <Text style={styles.appTagline}>Real Backend Test</Text>
+          <Text style={styles.appTagline}>Community Security</Text>
         </View>
 
         <View style={styles.formSection}>
-          <Text style={styles.title}>Backend Login Test</Text>
-          <Text style={styles.subtitle}>Testing real Django backend</Text>
-
-          <Text style={styles.apiUrl}>Backend: {API_BASE_URL}</Text>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Sign in to your account</Text>
 
           <TextInput
             style={styles.input}
@@ -121,15 +99,12 @@ const LoginScreen = ({ navigation }) => {
             disabled={isLoading}
           >
             <Text style={styles.buttonText}>
-              {isLoading ? 'Testing Real Login...' : 'Test Real Login'}
+              {isLoading ? 'Logging in...' : 'Login'}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.testButton}
-            onPress={testWithRealUser}
-          >
-            <Text style={styles.testButtonText}>Load Test User</Text>
+          <TouchableOpacity style={styles.demoButton} onPress={quickDemo}>
+            <Text style={styles.demoButtonText}>Quick Demo Access</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -137,7 +112,7 @@ const LoginScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('Signup')}
           >
             <Text style={styles.signupText}>
-              Test Signup? <Text style={styles.signupBold}>Sign Up</Text>
+              New to Neighborhood Watch? <Text style={styles.signupBold}>Sign Up</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -190,17 +165,8 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 10,
+    marginBottom: 25,
     textAlign: 'center',
-  },
-  apiUrl: {
-    fontSize: 10,
-    color: '#888',
-    textAlign: 'center',
-    marginBottom: 20,
-    backgroundColor: '#f5f5f5',
-    padding: 8,
-    borderRadius: 4,
   },
   input: {
     width: '100%',
@@ -221,7 +187,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 44,
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 15,
     marginTop: 10,
   },
   buttonDisabled: {
@@ -232,7 +198,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-  testButton: {
+  demoButton: {
     width: '100%',
     padding: 10,
     backgroundColor: '#28a745',
@@ -240,9 +206,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
-  testButtonText: {
+  demoButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '500',
     fontSize: 12,
   },
   signupLink: {

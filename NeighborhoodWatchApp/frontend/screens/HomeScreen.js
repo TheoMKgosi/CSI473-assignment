@@ -34,14 +34,41 @@ const HomeScreen = ({ navigation, route }) => {
       icon: '💰',
       screen: 'Subscription'
     },
+    { 
+      title: 'My Profile', 
+      subtitle: 'Update your information',
+      icon: '👤',
+      screen: 'Profile'
+    },
+    { 
+      title: 'Settings', 
+      subtitle: 'App preferences',
+      icon: '⚙️',
+      screen: 'Settings'
+    },
   ];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
-        <Text style={styles.welcome}>Welcome back,</Text>
-        <Text style={styles.userName}>{user.full_name}</Text>
-        <Text style={styles.subtitle}>Neighborhood Watch Member</Text>
+        <View style={styles.userInfo}>
+          <Text style={styles.welcome}>Welcome back,</Text>
+          <Text style={styles.userName}>{user.full_name}</Text>
+          <Text style={styles.subtitle}>Neighborhood Watch Member</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('Profile', { user })}
+        >
+          <Text style={styles.profileIcon}>👤</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.notificationBanner}>
+        <Text style={styles.notificationText}>🔔 3 new security alerts in your area</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Forum')}>
+          <Text style={styles.viewAllText}>View All</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.menuGrid}>
@@ -56,6 +83,24 @@ const HomeScreen = ({ navigation, route }) => {
             <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
           </TouchableOpacity>
         ))}
+      </View>
+
+      <View style={styles.quickActions}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.quickButton} onPress={() => navigation.navigate('Panic')}>
+            <Text style={styles.quickButtonIcon}>🚨</Text>
+            <Text style={styles.quickButtonText}>Emergency</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickButton} onPress={() => navigation.navigate('Forum')}>
+            <Text style={styles.quickButtonIcon}>📝</Text>
+            <Text style={styles.quickButtonText}>Post Alert</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickButton} onPress={() => navigation.navigate('Profile')}>
+            <Text style={styles.quickButtonIcon}>📍</Text>
+            <Text style={styles.quickButtonText}>Share Location</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -84,6 +129,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  userInfo: {
+    flex: 1,
   },
   welcome: {
     fontSize: 16,
@@ -100,10 +151,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#61a3d2',
   },
+  profileButton: {
+    padding: 10,
+    backgroundColor: '#f0f8ff',
+    borderRadius: 20,
+  },
+  profileIcon: {
+    fontSize: 20,
+  },
+  notificationBanner: {
+    backgroundColor: '#fff3cd',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+  },
+  notificationText: {
+    fontSize: 14,
+    color: '#856404',
+    fontWeight: '500',
+  },
+  viewAllText: {
+    fontSize: 12,
+    color: '#61a3d2',
+    fontWeight: '500',
+  },
   menuGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    marginBottom: 20,
   },
   menuCard: {
     backgroundColor: '#fff',
@@ -132,6 +213,42 @@ const styles = StyleSheet.create({
   menuSubtitle: {
     fontSize: 12,
     color: '#666',
+    textAlign: 'center',
+  },
+  quickActions: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 15,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  quickButton: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  quickButtonIcon: {
+    fontSize: 24,
+    marginBottom: 5,
+  },
+  quickButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#333',
     textAlign: 'center',
   },
   logoutButton: {
