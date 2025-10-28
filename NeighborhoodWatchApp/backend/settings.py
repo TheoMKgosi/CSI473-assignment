@@ -73,6 +73,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://localhost:8081",
     "http://127.0.0.1:8081",
     "https://127.0.0.1:8081",
+    "http://0.0.0.0:8081",
+    "https://0.0.0.0:8081",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -85,8 +87,12 @@ CSRF_TRUSTED_ORIGINS = [
     "https://localhost:8081", 
     "http://127.0.0.1:8081",
     "https://127.0.0.1:8081",
+    "http://0.0.0.0:8081",
+    "https://0.0.0.0:8081",
     "http://localhost:8000",
     "https://localhost:8000",
+    "http://0.0.0.0:8000",
+    "https://0.0.0.0:8000",
 ]
 
 # Disable CSRF for API views (since we're using token auth)
