@@ -1,19 +1,10 @@
 import os
 from pathlib import Path
-#from dotenv import load_dotenv
-
-# Load environment variables from .env file
-#load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY= '13(t&s)!s(!dso*y$!1n@(irg#gb4q(zh#d7c!(+=awo%^0$8&'
+SECRET_KEY='13(t&s)!s(!dso*y$!1n@(irg#gb4q(zh#d7c!(+=awo%^0$8&'
 DEBUG=True
-
-
-# SECURITY WARNING: don't run with debug turned on in production!
-#DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 
@@ -27,7 +18,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'backend.api',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -42,22 +33,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'backend.urls'
-
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.Templates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
 
 DATABASES = {
     'default': {
@@ -77,18 +52,11 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
+    "http://127.0.0.1:8081",
     "https://localhost:8081",
-    "https://*.github.dev",
-    "http://*.github.dev",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # For development only
-CORS_ALLOW_CREDENTIALS = True
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://*.github.dev",
-    "http://*.github.dev",
-]
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
