@@ -33,7 +33,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'backend.urls'
 
-# ADD THIS TEMPLATES CONFIGURATION
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -66,12 +65,29 @@ REST_FRAMEWORK = {
     ],
 }
 
+# FIX CSRF AND CORS SETTINGS
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
+    "https://localhost:8081",
     "http://127.0.0.1:8081",
+    "https://127.0.0.1:8081",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8081",
+    "https://localhost:8081", 
+    "http://127.0.0.1:8081",
+    "https://127.0.0.1:8081",
+    "http://localhost:8000",
+    "https://localhost:8000",
+]
+
+# Disable CSRF for API views (since we're using token auth)
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_HTTPONLY = False
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
