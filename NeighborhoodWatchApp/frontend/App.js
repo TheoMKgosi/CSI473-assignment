@@ -11,6 +11,7 @@ import ForumScreen from './screens/ForumScreen';
 import PatrolStatsScreen from './screens/PatrolStatsScreen';
 import PanicScreen from './screens/PanicScreen';
 import SubscriptionScreen from './screens/SubscriptionScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
 const Stack = createStackNavigator();
 
