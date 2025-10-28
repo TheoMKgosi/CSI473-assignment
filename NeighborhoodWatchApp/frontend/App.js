@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as Font from 'expo-font';
@@ -14,7 +14,7 @@ import SubscriptionScreen from './screens/SubscriptionScreen';
 
 const Stack = createStackNavigator();
 
-export default function App() {
+const App = () => {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   const loadFonts = async () => {
@@ -22,35 +22,106 @@ export default function App() {
       await Font.loadAsync({
         Inter: require('./assets/fonts/Inter-Regular.ttf'),
       });
-    } catch (e) {
-      console.warn('Inter font not found – using system font');
+    } catch (error) {
+      console.log('Font load failed, using fallback:', error);
     } finally {
       setFontsLoaded(true);
     }
   };
 
-  useEffect(() => { loadFonts(); }, []);
+  useEffect(() => {
+    loadFonts();
+  }, []);
 
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading…</Text>
+        <Text>Loading...</Text>
       </View>
     );
   }
 
   return (
     <NavigationContainer>
-      <StatusBar barStyle="dark-content" />
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Forum" component={ForumScreen} />
-        <Stack.Screen name="PatrolStats" component={PatrolStatsScreen} />
-        <Stack.Screen name="Panic" component={PanicScreen} />
-        <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <Stack.Navigator 
+        initialRouteName="Login"
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#ffffff', // White background
+            elevation: 2, // Subtle shadow on Android
+            shadowColor: '#000', // Subtle shadow on iOS
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.1,
+            shadowRadius: 2,
+          },
+          headerTintColor: '#61a3d2', // Blue back button
+          headerTitleStyle: {
+            fontWeight: '600',
+            fontSize: 18,
+            color: '#333', // Dark title text
+          },
+          headerBackTitle: 'Back', // Show "Back" text on iOS
+          headerBackTitleVisible: true,
+        }}
+      >
+        <Stack.Screen 
+          name="Login" 
+          component={LoginScreen} 
+          options={{ 
+            headerShown: false 
+          }} 
+        />
+        <Stack.Screen 
+          name="Signup" 
+          component={SignupScreen} 
+          options={{ 
+            headerShown: false 
+          }} 
+        />
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen}
+          options={{ 
+            title: 'Dashboard',
+            headerLeft: null, // No back button on Home screen
+          }} 
+        />
+        <Stack.Screen 
+          name="Forum" 
+          component={ForumScreen}
+          options={{ 
+            title: 'Community Forum',
+            headerTintColor: '#61a3d2', // Explicit blue back button
+          }}
+        />
+        <Stack.Screen 
+          name="PatrolStats" 
+          component={PatrolStatsScreen}
+          options={{ 
+            title: 'Patrol Statistics',
+            headerTintColor: '#61a3d2',
+          }}
+        />
+        <Stack.Screen 
+          name="Panic" 
+          component={PanicScreen}
+          options={{ 
+            title: 'Emergency Alert',
+            headerTintColor: '#61a3d2',
+          }}
+        />
+        <Stack.Screen 
+          name="Subscription" 
+          component={SubscriptionScreen}
+          options={{ 
+            title: 'Subscription',
+            headerTintColor: '#61a3d2',
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
-}
+};
+
+export default App;
