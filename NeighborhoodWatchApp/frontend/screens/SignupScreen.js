@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Linking } from 'react-native';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev';
 
 const SignupScreen = ({ navigation }) => {
   const [form, setForm] = useState({
@@ -25,22 +25,78 @@ const SignupScreen = ({ navigation }) => {
       
       if (response.data.success) {
         Alert.alert(
-          'Success',
-          response.data.message || 'Account created successfully! Awaiting admin approval.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+          'Success! 🎉',
+          'Account created successfully! For immediate access, use our pre-approved demo accounts:\n\n' +
+          'Email: demo1@neighborhood.com\nPassword: demo123\n\n' +
+          'Or wait for admin approval of your new account.',
+          [
+            { 
+              text: 'Use Demo Account', 
+              onPress: () => navigation.navigate('Login')
+            },
+            { 
+              text: 'OK', 
+              style: 'cancel' 
+            }
+          ]
         );
       } else {
         Alert.alert('Signup Failed', response.data.errors || 'Please try again.');
       }
     } catch (error) {
+      console.log('Signup error:', error);
+      
       if (error.response?.data?.errors) {
         Alert.alert('Signup Failed', error.response.data.errors);
+      } else if (error.code === 'ERR_NETWORK') {
+        // Network error - offer demo accounts
+        Alert.alert(
+          'Connection Issue',
+          'Cannot reach server. Use our pre-approved demo accounts for immediate access:',
+          [
+            {
+              text: 'Use Demo Account 1',
+              onPress: () => {
+                navigation.navigate('Login');
+                // Pre-fill login form (you might need to use context or state management for this)
+              }
+            },
+            {
+              text: 'Use Demo Account 2', 
+              onPress: () => navigation.navigate('Login')
+            },
+            {
+              text: 'Try Again',
+              style: 'cancel'
+            }
+          ]
+        );
       } else {
         Alert.alert('Error', 'Signup failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const openAdminPanel = () => {
+    Linking.openURL('https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev/admin')
+      .catch(err => Alert.alert('Error', 'Cannot open admin panel'));
+  };
+
+  const useDemoAccount = (accountNumber) => {
+    const demos = [
+      { email: 'demo1@neighborhood.com', password: 'demo123' },
+      { email: 'demo2@neighborhood.com', password: 'demo123' },
+      { email: 'demo3@neighborhood.com', password: 'demo123' }
+    ];
+    
+    const demo = demos[accountNumber - 1];
+    Alert.alert(
+      'Demo Account',
+      `Use this account to login:\n\nEmail: ${demo.email}\nPassword: ${demo.password}`,
+      [{ text: 'Go to Login', onPress: () => navigation.navigate('Login') }]
+    );
   };
 
   return (
@@ -85,6 +141,35 @@ const SignupScreen = ({ navigation }) => {
               </Text>
             </TouchableOpacity>
 
+            {/* Demo Accounts Section */}
+            <View style={styles.demoSection}>
+              <Text style={styles.demoTitle}>Quick Demo Access</Text>
+              <Text style={styles.demoSubtitle}>Pre-approved accounts for immediate testing</Text>
+              
+              <View style={styles.demoButtons}>
+                <TouchableOpacity 
+                  style={styles.demoButton}
+                  onPress={() => useDemoAccount(1)}
+                >
+                  <Text style={styles.demoButtonText}>Demo Account 1</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.demoButton}
+                  onPress={() => useDemoAccount(2)}
+                >
+                  <Text style={styles.demoButtonText}>Demo Account 2</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.demoButton}
+                  onPress={() => useDemoAccount(3)}
+                >
+                  <Text style={styles.demoButtonText}>Demo Account 3</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             <TouchableOpacity
               style={styles.loginLink}
               onPress={() => navigation.navigate('Login')}
@@ -92,6 +177,13 @@ const SignupScreen = ({ navigation }) => {
               <Text style={styles.loginText}>
                 Already have an account? <Text style={styles.loginBold}>Sign In</Text>
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.adminLink}
+              onPress={openAdminPanel}
+            >
+              <Text style={styles.adminText}>Admin Panel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -162,27 +254,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     height: 40,
   },
-  termsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-    justifyContent: 'center',
-  },
-  checkbox: {
-    marginRight: 8,
-  },
-  checkboxText: {
-    fontSize: 16,
-    color: '#61a3d2',
-  },
-  termsText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  termsLink: {
-    color: '#61a3d2',
-    fontWeight: '500',
-  },
   button: {
     width: '100%',
     padding: 12,
@@ -191,8 +262,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 44,
     justifyContent: 'center',
-    marginTop: 5,
-    marginBottom: 15,
+    marginTop: 15,
+    marginBottom: 20,
   },
   buttonDisabled: {
     backgroundColor: '#cccccc',
@@ -202,8 +273,47 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  demoSection: {
+    backgroundColor: '#f8f9fa',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  demoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  demoSubtitle: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  demoButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  demoButton: {
+    flex: 1,
+    backgroundColor: '#28a745',
+    padding: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginHorizontal: 3,
+  },
+  demoButtonText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '500',
+  },
   loginLink: {
     alignItems: 'center',
+    marginBottom: 10,
   },
   loginText: {
     color: '#666',
@@ -212,6 +322,14 @@ const styles = StyleSheet.create({
   loginBold: {
     color: '#61a3d2',
     fontWeight: '600',
+  },
+  adminLink: {
+    alignItems: 'center',
+  },
+  adminText: {
+    color: '#6c757d',
+    fontSize: 10,
+    textDecorationLine: 'underline',
   },
 });
 
