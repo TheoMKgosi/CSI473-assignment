@@ -1,37 +1,183 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-export default function PatrolStatsScreen() {
-  const [stats, setStats] = useState({ completed: 0, response_time: 'N/A' });
+const PatrolStatsScreen = () => {
+  const [stats, setStats] = useState({ 
+    completed: 0, 
+    response_time: 'N/A',
+    coverage: 0,
+    incidents: 0
+  });
 
   useEffect(() => {
-    setStats({ completed: 12, response_time: '4.2 min' });
+    // Mock stats
+    setStats({
+      completed: 12,
+      response_time: '4.2 min',
+      coverage: 85,
+      incidents: 2
+    });
   }, []);
 
+  const statCards = [
+    {
+      title: 'Patrols Completed',
+      value: stats.completed,
+      icon: '🛡️',
+      color: '#61a3d2'
+    },
+    {
+      title: 'Avg Response Time',
+      value: stats.response_time,
+      icon: '⏱️',
+      color: '#4CAF50'
+    },
+    {
+      title: 'Area Coverage',
+      value: `${stats.coverage}%`,
+      icon: '🗺️',
+      color: '#FF9800'
+    },
+    {
+      title: 'Incidents Reported',
+      value: stats.incidents,
+      icon: '📝',
+      color: '#F44336'
+    },
+  ];
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Patrol Statistics</Text>
-
-      <View style={styles.box}>
-        <Text style={styles.label}>Patrols Completed</Text>
-        <Text style={styles.value}>{stats.completed}</Text>
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Security Dashboard</Text>
+        <Text style={styles.subtitle}>Real-time patrol statistics</Text>
       </View>
 
-      <View style={styles.box}>
-        <Text style={styles.label}>Avg. Response Time</Text>
-        <Text style={styles.value}>{stats.response_time}</Text>
+      <View style={styles.statsGrid}>
+        {statCards.map((stat, index) => (
+          <View key={index} style={styles.statCard}>
+            <View style={[styles.statIcon, { backgroundColor: `${stat.color}20` }]}>
+              <Text style={styles.icon}>{stat.icon}</Text>
+            </View>
+            <Text style={styles.statValue}>{stat.value}</Text>
+            <Text style={styles.statLabel}>{stat.title}</Text>
+          </View>
+        ))}
       </View>
 
-      <Text style={styles.note}>Last updated: just now</Text>
-    </View>
+      <View style={styles.reportSection}>
+        <Text style={styles.sectionTitle}>Monthly Summary</Text>
+        <View style={styles.reportCard}>
+          <Text style={styles.reportText}>✅ All patrol routes completed on schedule</Text>
+          <Text style={styles.reportText}>📊 Response time improved by 12% this month</Text>
+          <Text style={styles.reportText}>👥 45 active community participants</Text>
+        </View>
+      </View>
+
+      <Text style={styles.updateNote}>Last updated: Today at 14:30</Text>
+    </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff', justifyContent: 'center' },
-  title: { fontSize: 24, textAlign: 'center', marginBottom: 30 },
-  box: { backgroundColor: '#f0f8ff', padding: 20, borderRadius: 12, marginVertical: 15, alignItems: 'center', borderWidth: 1, borderColor: '#61a3d2' },
-  label: { fontSize: 16, color: '#555', marginBottom: 8 },
-  value: { fontSize: 32, fontWeight: 'bold', color: '#61a3d2' },
-  note: { textAlign: 'center', color: '#888', marginTop: 20, fontSize: 12 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f8f9fa',
+    padding: 20,
+  },
+  header: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 15,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  title: { 
+    fontSize: 24, 
+    fontWeight: '600', 
+    color: '#333',
+    marginBottom: 5,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  statCard: {
+    backgroundColor: '#fff',
+    width: '48%',
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  icon: {
+    fontSize: 20,
+  },
+  statValue: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: '#333',
+    marginBottom: 5,
+  },
+  statLabel: { 
+    fontSize: 12, 
+    color: '#666',
+    textAlign: 'center',
+  },
+  reportSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  reportCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  reportText: {
+    fontSize: 14,
+    color: '#444',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  updateNote: { 
+    textAlign: 'center', 
+    color: '#888', 
+    fontSize: 12, 
+    marginTop: 10,
+  },
 });
+
+export default PatrolStatsScreen;
