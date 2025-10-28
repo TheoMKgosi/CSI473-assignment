@@ -31,7 +31,7 @@ def signup(request):
         )
         
         # Create user profile
-        profile = UserProfile.objects.create(
+        UserProfile.objects.create(
             user=user,
             full_name=data['full_name'],
             phone=data['phone'],
@@ -92,14 +92,60 @@ def login(request):
     except Exception as e:
         return Response({'errors': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def forum(request):
+    if request.method == 'GET':
+        # Mock forum posts
+        posts = [
+            {
+                'id': 1,
+                'user': {'email': 'user1@example.com'},
+                'content': 'Welcome to the community forum!',
+                'likes': 5,
+                'time': '2 hours ago'
+            },
+            {
+                'id': 2, 
+                'user': {'email': 'user2@example.com'},
+                'content': 'Has anyone seen any suspicious activity near the park?',
+                'likes': 3,
+                'time': '5 hours ago'
+            }
+        ]
+        return Response(posts)
+    else:
+        # Handle POST request - create new post
+        content = request.data.get('content', '')
+        if not content:
+            return Response({'errors': 'Content is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Mock new post response
+        new_post = {
+            'id': 3,
+            'user': {'email': 'current@user.com'},
+            'content': content,
+            'likes': 0,
+            'time': 'Just now'
+        }
+        return Response(new_post, status=status.HTTP_201_CREATED)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def patrol_stats(request):
-    return Response({'completed': 0, 'response_time': '0 min'}, status=200)
+    # Mock patrol statistics
+    stats = {
+        'completed': 12,
+        'response_time': '4.2 min',
+        'coverage': 85,
+        'incidents': 2
+    }
+    return Response(stats, status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def panic(request):
+    # Handle emergency alert
     return Response({'success': True, 'message': 'Emergency alert triggered'}, status=200)
 
 @api_view(['POST'])
