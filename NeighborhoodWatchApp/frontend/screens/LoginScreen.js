@@ -13,16 +13,11 @@ const LoginScreen = ({ navigation }) => {
     }
 
     setIsLoading(true);
-
-    // Simulate API call delay
     setTimeout(() => {
       Alert.alert('Success', 'Mock login successful!');
       navigation.navigate('Home', {
         token: 'mock-token-12345',
-        user: { 
-          email: email, 
-          full_name: 'Demo User'
-        }
+        user: { email: email, full_name: 'Demo User' }
       });
       setIsLoading(false);
     }, 1000);
@@ -30,55 +25,61 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Compact Header */}
-      <View style={styles.header}>
-        <Text style={styles.shieldIcon}>🛡️</Text>
-        <Text style={styles.appName}>Neighborhood Watch</Text>
-      </View>
+      <View style={styles.contentContainer}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <Text style={styles.shieldIcon}>🛡️</Text>
+          <Text style={styles.appName}>Neighborhood Watch</Text>
+          <Text style={styles.appTagline}>Community Security</Text>
+        </View>
 
-      {/* Compact Form */}
-      <View style={styles.form}>
-        <Text style={styles.title}>Welcome Back</Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        {/* Login Form Section */}
+        <View style={styles.formSection}>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Sign in to your account</Text>
 
-        <TouchableOpacity style={styles.forgotPassword}>
-          <Text style={styles.forgotText}>Forgot password?</Text>
-        </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="rgba(0, 0, 0, 0.5)"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="rgba(0, 0, 0, 0.5)"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Logging in...' : 'Login'}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.forgotPassword}>
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.signupLink}
-          onPress={() => navigation.navigate('Signup')}
-        >
-          <Text style={styles.signupText}>
-            New user? <Text style={styles.signupBold}>Sign Up</Text>
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Logging in...' : 'Login'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.signupLink}
+            onPress={() => navigation.navigate('Signup')}
+          >
+            <Text style={styles.signupText}>
+              New to Neighborhood Watch? <Text style={styles.signupBold}>Sign Up</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -88,48 +89,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 15,
-    justifyContent: 'center',
+    padding: 20,
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'space-between',
+    maxHeight: 600, // Fixed container height
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginTop: 40,
   },
   shieldIcon: {
-    fontSize: 50,
+    fontSize: 60,
     color: '#61a3d2',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   appName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: '#333',
-    textAlign: 'center',
+    marginBottom: 4,
   },
-  form: {
-    width: '100%',
+  appTagline: {
+    fontSize: 14,
+    color: '#61a3d2',
+    fontWeight: '500',
+  },
+  formSection: {
+    marginBottom: 40,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 20,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 25,
     textAlign: 'center',
   },
   input: {
     width: '100%',
-    padding: 10,
+    padding: 12,
     marginVertical: 6,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 6,
+    borderRadius: 8,
     backgroundColor: '#fafafa',
     fontSize: 14,
-    height: 40,
+    height: 44,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginBottom: 15,
+    marginBottom: 20,
     marginTop: 5,
   },
   forgotText: {
@@ -138,12 +154,16 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    padding: 10,
+    padding: 12,
     backgroundColor: '#61a3d2',
-    borderRadius: 6,
+    borderRadius: 8,
     alignItems: 'center',
-    height: 40,
+    height: 44,
     justifyContent: 'center',
+    marginBottom: 15,
+  },
+  buttonDisabled: {
+    backgroundColor: '#cccccc',
   },
   buttonText: {
     color: '#fff',
@@ -151,7 +171,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   signupLink: {
-    marginTop: 15,
     alignItems: 'center',
   },
   signupText: {
