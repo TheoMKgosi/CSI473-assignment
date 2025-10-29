@@ -8,7 +8,7 @@ const handleLogin = async () => {
   setIsLoading(true);
   
   try {
-    const response = await fetch('http://localhost:8000/api/security/login/', {
+    const response = await fetch('http://localhost:8002/api/security/login/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

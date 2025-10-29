@@ -21,7 +21,7 @@ const handleSignUp = async () => {
   setIsLoading(true);
 
   try {
-    const response = await fetch('http://localhost:8000/api/security/signup/', {
+    const response = await fetch('http://localhost:8002/api/security/signup/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
