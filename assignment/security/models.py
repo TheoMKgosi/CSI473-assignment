@@ -19,9 +19,7 @@ class SecurityProfile(models.Model):
     employee_id = models.CharField(max_length=20, unique=True)
     role = models.CharField(max_length=20, default='security')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
+    
     class Meta:
         verbose_name = 'Security Profile'
         verbose_name_plural = 'Security Profiles'
