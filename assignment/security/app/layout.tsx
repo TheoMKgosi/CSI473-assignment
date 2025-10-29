@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useState, useEffect } from 'react';
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -11,19 +11,17 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const segments = useSegments();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const initialRoute = token ? '(tabs)' : '(auth)/login';
+        console.log('Auth check - Token found:', !!token);
         
-        // Use replace to avoid back navigation to auth screens
-        router.replace(initialRoute as any);
+        // Don't auto-redirect, let individual screens handle auth
+        // This prevents the automatic redirect to tabs
       } catch (error) {
         console.error('Auth check error:', error);
-        router.replace('/(auth)/login' as any);
       } finally {
         setIsLoading(false);
       }

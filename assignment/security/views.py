@@ -1,4 +1,3 @@
-# security/views.py
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -6,12 +5,11 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from .models import SecurityProfile
-from .forms import SecuritySignupForm
 import random
 import string
+import time
 from rest_framework.authtoken.models import Token
 
-# security/views.py
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def security_signup(request):
@@ -36,8 +34,6 @@ def security_signup(request):
         
         # FIXED: Better employee ID generation
         def generate_employee_id():
-            import random
-            import string
             max_attempts = 10  # Prevent infinite loop
             for _ in range(max_attempts):
                 # Generate a more unique ID with timestamp component
@@ -84,65 +80,6 @@ def security_signup(request):
             {'error': f'Signup failed: {str(e)}'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    try:
-        data = request.data
-        
-        # Check required fields
-        required_fields = ['first_name', 'last_name', 'email', 'password']
-        for field in required_fields:
-            if field not in data or not data[field]:
-                return Response(
-                    {'error': f'{field} is required'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        
-        # Check if email already exists
-        if User.objects.filter(email=data['email']).exists():
-            return Response(
-                {'error': 'Email already exists'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Generate employee ID
-        def generate_employee_id():
-            while True:
-                eid = 'SEC' + ''.join(random.choices(string.digits, k=6))
-                if not SecurityProfile.objects.filter(employee_id=eid).exists():
-                    return eid
-        
-        employee_id = generate_employee_id()
-        
-        # Create user
-        user = User.objects.create_user(
-            username=data['email'],  # Use email as username
-            email=data['email'],
-            password=data['password'],
-            first_name=data['first_name'],
-            last_name=data['last_name']
-        )
-        
-        # Create security profile
-        profile = SecurityProfile.objects.create(
-            user=user,
-            email=data['email'],
-            phone_number=data.get('phone_number', ''),
-            address=data.get('address', ''),
-            date_of_birth=data.get('date_of_birth'),
-            employee_id=employee_id,
-            status='pending'  # Default status
-        )
-        
-        return Response({
-            'success': True, 
-            'message': 'Account created successfully. Awaiting approval.', 
-            'employee_id': employee_id
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        return Response(
-            {'error': f'Signup failed: {str(e)}'}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -150,7 +87,6 @@ def security_login(request):
     try:
         data = request.data
         
-        # Accept both email and employee_id for login
         email = data.get('email')
         password = data.get('password')
         
@@ -184,27 +120,28 @@ def security_login(request):
                 return Response({
                     'error': f'Account is {profile.status}. Please contact administrator.'
                 }, status=status.HTTP_403_FORBIDDEN)
+                
+            # Generate or get token
+            token, created = Token.objects.get_or_create(user=user)
+            
+            return Response({
+                'success': True,
+                'message': 'Login successful',
+                'token': token.key,
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'employee_id': profile.employee_id
+                }
+            }, status=status.HTTP_200_OK)
+            
         except SecurityProfile.DoesNotExist:
             return Response(
                 {'error': 'Security profile not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        
-        # Generate or get token
-        token, created = Token.objects.get_or_create(user=user)
-        
-        return Response({
-            'success': True,
-            'message': 'Login successful',
-            'token': token.key,
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'employee_id': profile.employee_id
-            }
-        }, status=status.HTTP_200_OK)
         
     except Exception as e:
         return Response(
