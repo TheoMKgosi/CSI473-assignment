@@ -1,68 +1,65 @@
-# security/views.py
+import logging
+import random
+import string
+import time
+import uuid
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from .models import SecurityProfile
-from .forms import SecuritySignupForm
-import random
-import string
 from rest_framework.authtoken.models import Token
+from .models import SecurityProfile
 
-# security/views.py
+# Setup logger
+logger = logging.getLogger(__name__)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def security_signup(request):
+    logger.info("Security signup attempt received.")
     try:
         data = request.data
-        
-        # Check required fields
+        logger.debug(f"Signup data: {data}")
+
+        # Required fields
         required_fields = ['first_name', 'last_name', 'email', 'password']
         for field in required_fields:
             if field not in data or not data[field]:
-                return Response(
-                    {'error': f'{field} is required'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        
-        # Check if email already exists
+                logger.warning(f"Missing required field: {field}")
+                return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check existing user
         if User.objects.filter(email=data['email']).exists():
-            return Response(
-                {'error': 'Email already exists'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # FIXED: Better employee ID generation
+            logger.warning(f"Duplicate email signup attempt: {data['email']}")
+            return Response({'error': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate unique employee ID
         def generate_employee_id():
-            import random
-            import string
-            max_attempts = 10  # Prevent infinite loop
-            for _ in range(max_attempts):
-                # Generate a more unique ID with timestamp component
-                timestamp_part = str(int(time.time()))[-4:]  # Last 4 digits of timestamp
+            for _ in range(10):  # Avoid infinite loop
+                timestamp_part = str(int(time.time()))[-4:]
                 random_part = ''.join(random.choices(string.digits, k=4))
                 eid = f'SEC{timestamp_part}{random_part}'
                 if not SecurityProfile.objects.filter(employee_id=eid).exists():
                     return eid
-            # Fallback: use UUID if random generation fails
-            import uuid
             return f'SEC{uuid.uuid4().hex[:8].upper()}'
-        
+
         employee_id = generate_employee_id()
-        
+        logger.debug(f"Generated employee ID: {employee_id}")
+
         # Create user
         user = User.objects.create_user(
-            username=data['email'],  # Use email as username
+            username=data['email'],
             email=data['email'],
             password=data['password'],
             first_name=data['first_name'],
             last_name=data['last_name']
         )
-        
+        logger.info(f"User created: {user.email}")
+
         # Create security profile
-        profile = SecurityProfile.objects.create(
+        SecurityProfile.objects.create(
             user=user,
             email=data['email'],
             phone_number=data.get('phone_number', ''),
@@ -71,128 +68,60 @@ def security_signup(request):
             employee_id=employee_id,
             status='pending'
         )
-        
+        logger.info(f"Security profile created for {user.email}")
+
         return Response({
-            'success': True, 
-            'message': 'Account created successfully. Awaiting approval.', 
+            'success': True,
+            'message': 'Account created successfully. Awaiting approval.',
             'employee_id': employee_id,
             'user_id': user.id
         }, status=status.HTTP_201_CREATED)
-        
+
     except Exception as e:
-        return Response(
-            {'error': f'Signup failed: {str(e)}'}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-    try:
-        data = request.data
-        
-        # Check required fields
-        required_fields = ['first_name', 'last_name', 'email', 'password']
-        for field in required_fields:
-            if field not in data or not data[field]:
-                return Response(
-                    {'error': f'{field} is required'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        
-        # Check if email already exists
-        if User.objects.filter(email=data['email']).exists():
-            return Response(
-                {'error': 'Email already exists'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Generate employee ID
-        def generate_employee_id():
-            while True:
-                eid = 'SEC' + ''.join(random.choices(string.digits, k=6))
-                if not SecurityProfile.objects.filter(employee_id=eid).exists():
-                    return eid
-        
-        employee_id = generate_employee_id()
-        
-        # Create user
-        user = User.objects.create_user(
-            username=data['email'],  # Use email as username
-            email=data['email'],
-            password=data['password'],
-            first_name=data['first_name'],
-            last_name=data['last_name']
-        )
-        
-        # Create security profile
-        profile = SecurityProfile.objects.create(
-            user=user,
-            email=data['email'],
-            phone_number=data.get('phone_number', ''),
-            address=data.get('address', ''),
-            date_of_birth=data.get('date_of_birth'),
-            employee_id=employee_id,
-            status='pending'  # Default status
-        )
-        
-        return Response({
-            'success': True, 
-            'message': 'Account created successfully. Awaiting approval.', 
-            'employee_id': employee_id
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        return Response(
-            {'error': f'Signup failed: {str(e)}'}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        logger.exception("Error during security signup")
+        return Response({'error': f'Signup failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def security_login(request):
+    logger.info("Security login attempt received.")
     try:
         data = request.data
-        
-        # Accept both email and employee_id for login
+        logger.debug(f"Login data: {data}")
+
         email = data.get('email')
         password = data.get('password')
-        
+
         if not email or not password:
-            return Response(
-                {'error': 'Email and password are required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Try to find user by email
+            logger.warning("Missing email or password")
+            return Response({'error': 'Email and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response(
-                {'error': 'Invalid email or password'}, 
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        # Authenticate user
+            logger.warning(f"Login failed: Unknown email {email}")
+            return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
+
         user = authenticate(username=user.username, password=password)
         if user is None:
-            return Response(
-                {'error': 'Invalid email or password'}, 
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        # Check security profile status
+            logger.warning(f"Authentication failed for email {email}")
+            return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Check profile status
         try:
             profile = SecurityProfile.objects.get(user=user)
-            if profile.status != 'approved':
-                return Response({
-                    'error': f'Account is {profile.status}. Please contact administrator.'
-                }, status=status.HTTP_403_FORBIDDEN)
         except SecurityProfile.DoesNotExist:
-            return Response(
-                {'error': 'Security profile not found'}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Generate or get token
-        token, created = Token.objects.get_or_create(user=user)
-        
+            logger.error(f"Security profile missing for {email}")
+            return Response({'error': 'Security profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if profile.status != 'approved':
+            logger.info(f"User {email} attempted login with status {profile.status}")
+            return Response({'error': f'Account is {profile.status}. Please contact administrator.'}, status=status.HTTP_403_FORBIDDEN)
+
+        token, _ = Token.objects.get_or_create(user=user)
+        logger.debug(f"Token issued for {email}")
+
         return Response({
             'success': True,
             'message': 'Login successful',
@@ -204,19 +133,21 @@ def security_login(request):
                 'last_name': user.last_name,
                 'employee_id': profile.employee_id
             }
-        }, status=status.HTTP_200_OK)
-        
+        })
+
     except Exception as e:
-        return Response(
-            {'error': f'Login failed: {str(e)}'}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        logger.exception("Error during security login")
+        return Response({'error': f'Login failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def security_profile(request):
-    """Get security officer profile"""
+    logger.info(f"Profile requested by {request.user.email}")
     try:
         profile = SecurityProfile.objects.get(user=request.user)
+        logger.debug(f"Profile found for {request.user.email}")
+
         return Response({
             'user': {
                 'id': request.user.id,
@@ -233,7 +164,5 @@ def security_profile(request):
             }
         })
     except SecurityProfile.DoesNotExist:
-        return Response(
-            {'error': 'Profile not found'}, 
-            status=status.HTTP_404_NOT_FOUND
-        )
+        logger.error(f"Profile not found for {request.user.email}")
+        return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
