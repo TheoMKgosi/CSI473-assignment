@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { api } from '../utils/api';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -20,12 +22,80 @@ const SettingsScreen = () => {
     autoUpload: false,
     vibration: true,
   });
+  const [officerProfile, setOfficerProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const toggleSetting = (setting) => {
-    setSettings(prev => ({
-      ...prev,
-      [setting]: !prev[setting]
-    }));
+  useEffect(() => {
+    loadOfficerProfile();
+    loadSettings();
+  }, []);
+
+  const loadOfficerProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      
+      if (token && token !== 'demo-token') {
+        // TODO: Uncomment when backend is ready
+        // const profile = await api.getOfficerProfile();
+        // setOfficerProfile(profile);
+        
+        // Mock data for now
+        setOfficerProfile({
+          name: 'John Smith',
+          badgeNumber: 'SG-247',
+          email: 'john.smith@security.com',
+          department: 'Patrol Division',
+          joinDate: 'January 15, 2023',
+        });
+      } else {
+        // Demo mode
+        setOfficerProfile({
+          name: 'Demo Officer',
+          badgeNumber: 'DEMO-001',
+          email: 'demo@security.com',
+          department: 'Demo Division',
+          joinDate: 'Today',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+      // Fallback data
+      setOfficerProfile({
+        name: 'Security Officer',
+        badgeNumber: 'N/A',
+        email: 'user@example.com',
+        department: 'Security',
+        joinDate: 'Unknown',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadSettings = async () => {
+    try {
+      const savedSettings = await AsyncStorage.getItem('appSettings');
+      if (savedSettings) {
+        setSettings(JSON.parse(savedSettings));
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  };
+
+  const toggleSetting = async (setting) => {
+    const newSettings = {
+      ...settings,
+      [setting]: !settings[setting]
+    };
+    
+    setSettings(newSettings);
+    
+    try {
+      await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    }
   };
 
   const handleLogout = () => {
@@ -40,36 +110,38 @@ const SettingsScreen = () => {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('token');
-              router.replace('/(auth)/login');
-              setTimeout(() => {
-                // Force reload to trigger RootLayout auth check
-                if (typeof window !== 'undefined') {
-                  window.location.reload();
-                }
-              }, 300);
-            } catch (e) {
-              Alert.alert('Error', 'Failed to logout. Please try again.');
-            }
-          },
+          onPress: performLogout,
         },
       ]
     );
   };
 
-  const officerProfile = {
-    name: 'John Smith',
-    badgeNumber: 'SG-247',
-    email: 'john.smith@security.com',
-    phone: '+1 (555) 123-4567',
-    department: 'Patrol Division',
-    joinDate: 'January 15, 2023',
+  const performLogout = async () => {
+    try {
+      // Clear all stored data
+      await AsyncStorage.multiRemove(['token', 'userRole', 'isDemo']);
+      // Navigate to login
+      router.replace('/(auth)/login');
+    } catch (e) {
+      console.error('Logout error:', e);
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
   };
 
+  const handleMenuPress = (item) => {
+    Alert.alert('Feature Coming Soon', `${item} functionality will be available in the next update.`);
+  };
+
+  if (isLoading || !officerProfile) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Profile Section */}
       <View style={styles.profileSection}>
         <View style={styles.avatar}>
@@ -80,6 +152,7 @@ const SettingsScreen = () => {
         <Text style={styles.profileName}>{officerProfile.name}</Text>
         <Text style={styles.profileBadge}>{officerProfile.badgeNumber}</Text>
         <Text style={styles.profileDepartment}>{officerProfile.department}</Text>
+        <Text style={styles.profileEmail}>{officerProfile.email}</Text>
       </View>
 
       {/* App Settings */}
@@ -87,7 +160,7 @@ const SettingsScreen = () => {
         <Text style={styles.sectionTitle}>App Settings</Text>
         
         <View style={styles.settingItem}>
-          <View>
+          <View style={styles.settingTextContainer}>
             <Text style={styles.settingLabel}>Push Notifications</Text>
             <Text style={styles.settingDescription}>Receive patrol alerts and updates</Text>
           </View>
@@ -100,7 +173,7 @@ const SettingsScreen = () => {
         </View>
 
         <View style={styles.settingItem}>
-          <View>
+          <View style={styles.settingTextContainer}>
             <Text style={styles.settingLabel}>GPS Tracking</Text>
             <Text style={styles.settingDescription}>Enable location tracking during patrols</Text>
           </View>
@@ -113,7 +186,7 @@ const SettingsScreen = () => {
         </View>
 
         <View style={styles.settingItem}>
-          <View>
+          <View style={styles.settingTextContainer}>
             <Text style={styles.settingLabel}>Auto Upload Reports</Text>
             <Text style={styles.settingDescription}>Automatically sync incident reports</Text>
           </View>
@@ -126,7 +199,7 @@ const SettingsScreen = () => {
         </View>
 
         <View style={styles.settingItem}>
-          <View>
+          <View style={styles.settingTextContainer}>
             <Text style={styles.settingLabel}>Vibration Alerts</Text>
             <Text style={styles.settingDescription}>Haptic feedback for notifications</Text>
           </View>
@@ -143,17 +216,17 @@ const SettingsScreen = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('Edit Profile')}>
           <Text style={styles.menuText}>Edit Profile</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('Change Password')}>
           <Text style={styles.menuText}>Change Password</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('Privacy & Security')}>
           <Text style={styles.menuText}>Privacy & Security</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
@@ -163,17 +236,17 @@ const SettingsScreen = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Support</Text>
         
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('Help & Documentation')}>
           <Text style={styles.menuText}>Help & Documentation</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('Report an Issue')}>
           <Text style={styles.menuText}>Report an Issue</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('Contact Supervisor')}>
           <Text style={styles.menuText}>Contact Supervisor</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
@@ -185,17 +258,17 @@ const SettingsScreen = () => {
         
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>App Version</Text>
-          <Text style={styles.infoValue}>1.2.3</Text>
+          <Text style={styles.infoValue}>1.0.0</Text>
         </View>
 
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Last Updated</Text>
-          <Text style={styles.infoValue}>Nov 15, 2024</Text>
+          <Text style={styles.infoValue}>Today</Text>
         </View>
 
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Developer</Text>
-          <Text style={styles.infoValue}>Security Systems Inc.</Text>
+          <Text style={styles.infoValue}>Security Systems</Text>
         </View>
       </View>
 
@@ -205,7 +278,7 @@ const SettingsScreen = () => {
       </TouchableOpacity>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Security Officer App v1.2.3</Text>
+        <Text style={styles.footerText}>Security Officer App v1.0.0</Text>
       </View>
     </ScrollView>
   );
@@ -215,6 +288,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileSection: {
     backgroundColor: 'white',
@@ -251,6 +328,11 @@ const styles = StyleSheet.create({
   profileDepartment: {
     fontSize: 14,
     color: '#666',
+    marginBottom: 3,
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: '#999',
   },
   section: {
     backgroundColor: 'white',
@@ -272,6 +354,10 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+  },
+  settingTextContainer: {
+    flex: 1,
+    paddingRight: 15,
   },
   settingLabel: {
     fontSize: 16,
