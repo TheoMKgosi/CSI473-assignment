@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
-
-const API_BASE_URL = 'https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev';
+import { API_BASE_URL } from './api';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
