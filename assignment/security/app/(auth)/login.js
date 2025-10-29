@@ -9,9 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const LoginScreen = ({ navigation, setIsAuthenticated }) => {
+const LoginScreen = ({ navigation }) => {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -20,16 +22,26 @@ const LoginScreen = ({ navigation, setIsAuthenticated }) => {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    
-    // Simulate login - in real app, this would call your backend
     try {
-      // store a demo token so RootLayout picks up authenticated state
-      await AsyncStorage.setItem('token', 'demo-token');
+      // Call backend API
+      const response = await fetch('http://localhost:8000/api/security/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
+      }
+      const data = await response.json();
+      // store token from backend
+      await AsyncStorage.setItem('token', data.token);
       Alert.alert('Success', 'Logged in successfully!');
-      // navigate to tabs index
       navigation.replace('(tabs)/index');
     } catch (e) {
-      Alert.alert('Error', 'Failed to save session');
+      Alert.alert('Error', e.message || 'Failed to login');
     }
   };
 
@@ -64,14 +76,21 @@ const LoginScreen = ({ navigation, setIsAuthenticated }) => {
         
         <TouchableOpacity 
           style={styles.signUpLink}
-          onPress={() => navigation.navigate('(auth)/signup')}
+          onPress={() => router.replace('/(auth)/signup')}
         >
           <Text style={styles.signUpText}>
-            Don't have an account? Sign Up
+            Don&apos;t have an account? Sign Up
           </Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.demoButton}>
+        <TouchableOpacity style={styles.demoButton} onPress={async () => {
+          try {
+            await AsyncStorage.setItem('token', 'demo-token');
+            router.replace('/');
+          } catch (e) {
+            Alert.alert('Error', 'Failed to use demo account');
+          }
+        }}>
           <Text style={styles.demoButtonText}>Use Demo Account</Text>
         </TouchableOpacity>
       </View>

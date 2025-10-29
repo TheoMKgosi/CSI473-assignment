@@ -1,58 +1,66 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, logout
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from .forms import SecuritySignupForm, SecurityLoginForm
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from .models import SecurityProfile
+import random
+import string
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def security_signup(request):
-    """Handle security personnel registration"""
-    if request.method == 'POST':
-        form = SecuritySignupForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            messages.success(request, 'Security account created successfully! Please wait for administrator approval.')
-            return redirect('security_login')
-    else:
-        form = SecuritySignupForm()
-    return render(request, 'security/signup.html', {'form': form})
+    data = request.data
+    required_fields = ['email', 'password', 'phone_number', 'address', 'date_of_birth']
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
+    if User.objects.filter(email=data['email']).exists():
+        return Response({'error': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+    # Systematic employee ID: SEC + 6 random digits
+    def generate_employee_id():
+        while True:
+            eid = 'SEC' + ''.join(random.choices(string.digits, k=6))
+            if not SecurityProfile.objects.filter(employee_id=eid).exists():
+                return eid
+    employee_id = generate_employee_id()
+    user = User.objects.create_user(
+        username=data['email'],
+        email=data['email'],
+        password=data['password']
+    )
+    profile = SecurityProfile.objects.create(
+        user=user,
+        email=data['email'],
+        phone_number=data['phone_number'],
+        address=data['address'],
+        date_of_birth=data['date_of_birth'],
+        employee_id=employee_id
+    )
+    return Response({'success': True, 'message': 'Account created. Awaiting approval.', 'employee_id': employee_id}, status=status.HTTP_201_CREATED)
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def security_login(request):
-    """Handle security personnel login"""
-    if request.method == 'POST':
-        form = SecurityLoginForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                # Check if user has security profile and is approved
-                try:
-                    security_profile = user.security_profile
-                    if security_profile.status == 'approved':
-                        login(request, user)
-                        messages.success(request, f'Welcome back, {username}!')
-                        return redirect('security:security_dashboard')
-                    elif security_profile.status == 'pending':
-                        messages.error(request, 'Your account is pending administrator approval.')
-                    elif security_profile.status == 'rejected':
-                        messages.error(request, 'Your account has been rejected. Please contact an administrator.')
-                except AttributeError:
-                    messages.error(request, 'No security profile found for this account.')
-            else:
-                messages.error(request, 'Invalid username or password.')
-        else:
-            messages.error(request, 'Invalid username or password.')
+    data = request.data
+    employee_id = data.get('employee_id')
+    password = data.get('password')
+    if not employee_id or not password:
+        return Response({'error': 'Employee ID and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        profile = SecurityProfile.objects.get(employee_id=employee_id)
+        user = profile.user
+    except SecurityProfile.DoesNotExist:
+        return Response({'error': 'Invalid employee ID or password'}, status=status.HTTP_401_UNAUTHORIZED)
+    user = authenticate(username=user.username, password=password)
+    if user is not None:
+        if profile.status == 'approved':
+            return Response({'success': True, 'message': 'Login successful', 'employee_id': profile.employee_id}, status=status.HTTP_200_OK)
+        elif profile.status == 'pending':
+            return Response({'error': 'Account pending approval'}, status=status.HTTP_403_FORBIDDEN)
+        elif profile.status == 'rejected':
+            return Response({'error': 'Account rejected'}, status=status.HTTP_403_FORBIDDEN)
     else:
-        form = SecurityLoginForm()
-    return render(request, 'security/login.html', {'form': form})
+        return Response({'error': 'Invalid employee ID or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
-@login_required
-def security_dashboard(request):
-    """Security personnel dashboard view"""
-    return render(request, 'security/dashboard.html')
-
-def security_logout(request):
-    """Handle security personnel logout"""
-    logout(request)
-    messages.info(request, 'You have been logged out.')
-    return redirect('security:security_login')

@@ -10,38 +10,46 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 
-const SignUpScreen = ({ navigation }) => {
+const SignUpScreen = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    badgeNumber: '',
   });
 
-  const handleSignUp = () => {
-    const { firstName, lastName, email, password, confirmPassword, badgeNumber } = formData;
-    
-    if (!firstName || !lastName || !email || !password || !confirmPassword || !badgeNumber) {
+  const handleSignUp = async () => {
+    const { firstName, lastName, email, password, confirmPassword } = formData;
+    if (!firstName || !lastName || !email || !password || !confirmPassword ) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
-    
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
-    
-  // Simulate signup - in real app, this would call your backend
-  Alert.alert('Success', 'Account created successfully! Please login.');
-  navigation.navigate('(auth)/login');
+    try {
+      // Call backend API
+      const { signupOfficer } = await import('../utils/api');
+      await signupOfficer({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        password,
+      });
+      Alert.alert('Success', 'Account created successfully! Please login.');
+      router.replace('/(auth)/login');
+    } catch (error) {
+      Alert.alert('Signup Failed', error.message || 'Could not create account');
+    }
   };
 
   const updateFormData = (field, value) => {
@@ -76,14 +84,6 @@ const SignUpScreen = ({ navigation }) => {
         
         <TextInput
           style={styles.input}
-          placeholder="Badge Number"
-          value={formData.badgeNumber}
-          onChangeText={(text) => updateFormData('badgeNumber', text)}
-          keyboardType="numeric"
-        />
-        
-        <TextInput
-          style={styles.input}
           placeholder="Email"
           value={formData.email}
           onChangeText={(text) => updateFormData('email', text)}
@@ -110,10 +110,9 @@ const SignUpScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
           <Text style={styles.signUpButtonText}>Create Account</Text>
         </TouchableOpacity>
-        
         <TouchableOpacity 
           style={styles.loginLink}
-          onPress={() => navigation.navigate('(auth)/login')}
+          onPress={() => router.replace('/(auth)/login')}
         >
           <Text style={styles.loginText}>
             Already have an account? Login
