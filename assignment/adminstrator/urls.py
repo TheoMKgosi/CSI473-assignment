@@ -9,7 +9,6 @@ urlpatterns = [
     path('logout/', views.administrator_logout, name='administrator_logout'),
     path('approve/<int:security_id>/', views.approve_security, name='approve_security'),
     path('reject/<int:security_id>/', views.reject_security, name='reject_security'),
-    path('house-management/', views.house_management_statistics, name='house_management'),
     path('subscription-statistics/', views.subscription_statistics, name='subscription_statistics'),
     path('security-compliance/', views.security_compliance_dashboard, name='security_compliance'),
     path('user-management/', views.user_management, name='user_management'),
