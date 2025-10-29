@@ -7,7 +7,7 @@ from django.db.models import Count, Avg, Sum, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
 from security.models import SecurityProfile
-from members.models import MemberProfile
+from members.models import UserProfile
 from .models import House, Subscription, SecurityCompliance
 from .forms import AdministratorSignupForm, AdministratorLoginForm, CreateAdministratorForm
 
@@ -53,9 +53,9 @@ def administrator_dashboard(request):
     rejected_security = SecurityProfile.objects.filter(status='rejected')
     
     # Get all member profiles
-    pending_members = MemberProfile.objects.filter(status='pending')
-    approved_members = MemberProfile.objects.filter(status='approved')
-    rejected_members = MemberProfile.objects.filter(status='rejected')
+    pending_members = UserProfile.objects.filter(status='pending')
+    approved_members = UserProfile.objects.filter(status='approved')
+    rejected_members = UserProfile.objects.filter(status='rejected')
     
     context = {
         'pending_security': pending_security,

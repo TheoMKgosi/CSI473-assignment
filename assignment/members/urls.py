@@ -1,5 +1,5 @@
 from django.urls import path
-from backend.api import views
+from members import views
 
 urlpatterns = [
     path('signup/', views.signup),

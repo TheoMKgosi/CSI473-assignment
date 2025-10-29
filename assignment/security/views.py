@@ -64,13 +64,3 @@ def security_login(request):
     else:
         return Response({'error': 'Invalid employee ID or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
-@login_required
-def security_dashboard(request):
-    """Security personnel dashboard view"""
-    return render(request, 'security/dashboard.html')
-
-def security_logout(request):
-    """Handle security personnel logout"""
-    logout(request)
-    messages.info(request, 'You have been logged out.')
-    return redirect('security:security_login')

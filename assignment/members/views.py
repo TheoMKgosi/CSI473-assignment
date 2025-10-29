@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from backend.api.models import UserProfile
+from .models import UserProfile
 import json
 
 @api_view(['POST'])
