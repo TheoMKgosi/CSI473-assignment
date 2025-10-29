@@ -30,23 +30,12 @@ def signup(request):
             password=data['password']
         )
         
-        # Generate QR code
-        import qrcode
-        from io import BytesIO
-        from django.core.files.base import ContentFile
-        qr_data = f"User:{user.id}|Email:{user.email}|Name:{data['full_name']}"
-        qr_img = qrcode.make(qr_data)
-        buffer = BytesIO()
-        qr_img.save(buffer, format='PNG')
-        qr_file = ContentFile(buffer.getvalue(), name=f"user_{user.id}_qr.png")
-
-        # Create user profile with QR code
+        # Create user profile
         UserProfile.objects.create(
             user=user,
             full_name=data['full_name'],
             phone=data['phone'],
-            address=data['address'],
-            qr_code=qr_file
+            address=data['address']
         )
         
         return Response({
