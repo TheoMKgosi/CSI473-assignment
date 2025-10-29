@@ -7,6 +7,7 @@ import {
   Alert,
   Dimensions,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -61,7 +62,13 @@ const ScanScreen = () => {
         'This app needs camera access to scan QR codes for security checkpoints.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Settings', onPress: () => Linking.openSettings() },
+          { 
+            text: 'Settings', 
+            onPress: () => {
+              // Use Alert instead of Linking to avoid errors
+              Alert.alert('Open Settings', 'Please enable camera permissions in your device settings.');
+            }
+          },
         ]
       );
       return;
@@ -118,18 +125,6 @@ const ScanScreen = () => {
     // Simulate API call to validate QR code
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // In real app, this would call your backend
-    // const token = await AsyncStorage.getItem('token');
-    // const response = await fetch('/api/security/validate-qr/', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${token}`
-    //   },
-    //   body: JSON.stringify({ qr_data: qrData, route_id: routeData.routeId })
-    // });
-    // return await response.json();
-
     // Mock validation logic
     const validLocations = [
       'Building B - North Entrance',

@@ -37,8 +37,11 @@ def security_signup(request):
 
         # Generate unique employee ID
         def generate_employee_id():
-            for _ in range(10):  # Avoid infinite loop
-                timestamp_part = str(int(time.time()))[-4:]
+
+            max_attempts = 10  # Prevent infinite loop
+            for _ in range(max_attempts):
+                # Generate a more unique ID with timestamp component
+                timestamp_part = str(int(time.time()))[-4:]  # Last 4 digits of timestamp
                 random_part = ''.join(random.choices(string.digits, k=4))
                 eid = f'SEC{timestamp_part}{random_part}'
                 if not SecurityProfile.objects.filter(employee_id=eid).exists():
