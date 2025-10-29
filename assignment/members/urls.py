@@ -1,11 +1,12 @@
 from django.urls import path
-from . import views
-
-app_name = 'members'
+from backend.api import views
 
 urlpatterns = [
-    path('signup/', views.member_signup, name='member_signup'),
-    path('login/', views.member_login, name='member_login'),
-    path('dashboard/', views.member_dashboard, name='member_dashboard'),
-    path('logout/', views.member_logout, name='member_logout'),
+    path('signup/', views.signup),
+    path('login/', views.login),
+    path('forum/', views.forum),
+    path('patrol-stats/', views.patrol_stats),
+    path('panic/', views.panic),
+    path('pay-subscription/', views.pay_subscription),
+    path('cancel-subscription/', views.cancel_subscription),
 ]

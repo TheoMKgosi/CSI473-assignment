@@ -9,8 +9,10 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
-const SettingsScreen = ({ navigation, setIsAuthenticated }) => {
+const SettingsScreen = () => {
+  const router = useRouter();
   const [settings, setSettings] = useState({
     notifications: true,
     darkMode: false,
@@ -41,7 +43,13 @@ const SettingsScreen = ({ navigation, setIsAuthenticated }) => {
           onPress: async () => {
             try {
               await AsyncStorage.removeItem('token');
-              navigation.replace('(auth)/login');
+              router.replace('/(auth)/login');
+              setTimeout(() => {
+                // Force reload to trigger RootLayout auth check
+                if (typeof window !== 'undefined') {
+                  window.location.reload();
+                }
+              }, 300);
             } catch (e) {
               Alert.alert('Error', 'Failed to logout. Please try again.');
             }
