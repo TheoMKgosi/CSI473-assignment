@@ -1,3 +1,4 @@
+import uuid
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
@@ -52,7 +53,6 @@ class CreateAdministratorForm(UserCreationForm):
         widget=forms.DateInput(attrs={'type': 'date'}),
         required=False
     )
-    employee_id = forms.CharField(max_length=20, required=True)
     department = forms.CharField(max_length=100, required=False)
 
     class Meta:
@@ -68,13 +68,15 @@ class CreateAdministratorForm(UserCreationForm):
 
         if commit:
             user.save()
+            # Generate unique employee ID
+            employee_id = f"ADM-{uuid.uuid4().hex[:8].upper()}"
             # Create administrator profile
             AdministratorProfile.objects.create(
                 user=user,
                 phone_number=self.cleaned_data.get('phone_number', ''),
                 address=self.cleaned_data.get('address', ''),
                 date_of_birth=self.cleaned_data.get('date_of_birth'),
-                employee_id=self.cleaned_data['employee_id'],
+                employee_id=employee_id,
                 department=self.cleaned_data.get('department', ''),
                 role='administrator'
             )

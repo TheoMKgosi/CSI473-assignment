@@ -332,6 +332,25 @@ def reject_member(request, member_id):
     messages.success(request, f'Member {UserProfile.user.username} has been rejected.')
     return redirect('adminstrator:administrator_dashboard')
 
+@login_required
+def print_qr_code(request, user_id):
+    """Display QR code for printing"""
+    user = get_object_or_404(User, id=user_id)
+    try:
+        profile = user.userprofile
+        if not profile.qr_code:
+            messages.error(request, 'No QR code found for this user.')
+            return redirect('adminstrator:user_management')
+        context = {
+            'user': user,
+            'profile': profile,
+            'qr_code_url': profile.qr_code.url,
+        }
+        return render(request, 'adminstrator/print_qr.html', context)
+    except UserProfile.DoesNotExist:
+        messages.error(request, 'User profile not found.')
+        return redirect('adminstrator:user_management')
+
 def administrator_logout(request):
     """Handle administrator logout"""
     logout(request)

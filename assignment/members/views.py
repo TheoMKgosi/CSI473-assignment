@@ -1,10 +1,13 @@
 import logging
+import qrcode
+from io import BytesIO
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.core.files import File
 from .models import UserProfile
 
 # --- Setup logger ---
@@ -35,7 +38,7 @@ def signup(request):
         )
         logger.info(f"User created successfully: {user.email}")
 
-        UserProfile.objects.create(
+        profile = UserProfile.objects.create(
             user=user,
             full_name=data['full_name'],
             phone=data['phone'],
@@ -43,10 +46,29 @@ def signup(request):
         )
         logger.debug(f"Profile created for {user.email}")
 
+        # Generate QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(f"member:{user.id}")
+        qr.make(fit=True)
+
+        img = qr.make_image(fill='black', back_color='white')
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+
+        profile.qr_code.save(f"qr_{user.id}.png", File(buffer), save=True)
+        logger.debug(f"QR code generated for {user.email}")
+
         return Response({
             'success': True,
             'message': 'User registered successfully. Awaiting admin approval.',
-            'user_id': user.id
+            'user_id': user.id,
+            'qr_code_url': profile.qr_code.url if profile.qr_code else None
         }, status=status.HTTP_201_CREATED)
     except Exception as e:
         logger.exception("Error during signup")

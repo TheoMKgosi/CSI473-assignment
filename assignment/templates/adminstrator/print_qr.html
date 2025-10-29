@@ -1,0 +1,116 @@
+{% extends "adminstrator/base.html" %}
+
+{% block title %}Print QR Code - {{ user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .print-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .qr-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr-code {
+            max-width: 300px;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .user-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .user-info h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .user-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .print-btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .print-btn:hover {
+            background: #0056b3;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .back-btn:hover {
+            background: #545b62;
+        }
+        @media print {
+            .print-btn, .back-btn {
+                display: none;
+            }
+            .print-container {
+                box-shadow: none;
+                border: none;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="print-container">
+        <h1>Member QR Code</h1>
+
+        <div class="user-info">
+            <h3>{{ profile.full_name }}</h3>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Phone:</strong> {{ profile.phone }}</p>
+            <p><strong>Address:</strong> {{ profile.address }}</p>
+            <p><strong>Member ID:</strong> {{ user.id }}</p>
+            <p><strong>Status:</strong>
+                {% if profile.is_approved %}
+                    <span style="color: #28a745;">Approved</span>
+                {% else %}
+                    <span style="color: #ffc107;">Pending Approval</span>
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="qr-section">
+            <h3>QR Code</h3>
+            <img src="{{ qr_code_url }}" alt="QR Code for {{ profile.full_name }}" class="qr-code">
+            <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                Scan this QR code to identify the member
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="window.print()" class="print-btn">Print QR Code</button>
+            <a href="{% url 'adminstrator:user_management' %}" class="back-btn">Back to User Management</a>
+        </div>
+    </div>
+
+    <script>
+        // Auto-print when page loads (optional)
+        // window.onload = function() { window.print(); };
+    </script>
+{% endblock %}

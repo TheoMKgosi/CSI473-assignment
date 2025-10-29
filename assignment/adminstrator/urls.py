@@ -18,4 +18,5 @@ urlpatterns = [
     path('create-admin/', views.create_administrator, name='create_administrator'),
     path('approve-member/<int:member_id>/', views.approve_member, name='approve_member'),
     path('reject-member/<int:member_id>/', views.reject_member, name='reject_member'),
+    path('user/<int:user_id>/print-qr/', views.print_qr_code, name='print_qr_code'),
 ]
