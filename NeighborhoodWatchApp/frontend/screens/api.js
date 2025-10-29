@@ -1,3 +1,3 @@
-const API_BASE_URL = 'https://solitary-wizard-7jpv449q4rvc9gw-8000.app.github.dev/';
+const API_BASE_URL = 'http://localhost:8000';
 
 export { API_BASE_URL };

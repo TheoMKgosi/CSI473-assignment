@@ -27,12 +27,3 @@ class SecurityProfile(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.employee_id}"
 
-# Signal to create security profile when user is created
-@receiver(post_save, sender=User)
-def create_security_profile(sender, instance, created, **kwargs):
-    if created:
-        SecurityProfile.objects.get_or_create(user=instance)
-
-@receiver(post_save, sender=User)
-def save_security_profile(sender, instance, **kwargs):
-    instance.security_profile.save()

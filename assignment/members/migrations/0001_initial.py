@@ -27,7 +27,8 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("completed", models.IntegerField(default=0)),
-                ("response_time", models.CharField(default="0 min", max_length=50)),
+                ("response_time", models.CharField(
+                    default="0 min", max_length=50)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
         ),
