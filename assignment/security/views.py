@@ -11,9 +11,79 @@ import random
 import string
 from rest_framework.authtoken.models import Token
 
+# security/views.py
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def security_signup(request):
+    try:
+        data = request.data
+        
+        # Check required fields
+        required_fields = ['first_name', 'last_name', 'email', 'password']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return Response(
+                    {'error': f'{field} is required'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Check if email already exists
+        if User.objects.filter(email=data['email']).exists():
+            return Response(
+                {'error': 'Email already exists'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # FIXED: Better employee ID generation
+        def generate_employee_id():
+            import random
+            import string
+            max_attempts = 10  # Prevent infinite loop
+            for _ in range(max_attempts):
+                # Generate a more unique ID with timestamp component
+                timestamp_part = str(int(time.time()))[-4:]  # Last 4 digits of timestamp
+                random_part = ''.join(random.choices(string.digits, k=4))
+                eid = f'SEC{timestamp_part}{random_part}'
+                if not SecurityProfile.objects.filter(employee_id=eid).exists():
+                    return eid
+            # Fallback: use UUID if random generation fails
+            import uuid
+            return f'SEC{uuid.uuid4().hex[:8].upper()}'
+        
+        employee_id = generate_employee_id()
+        
+        # Create user
+        user = User.objects.create_user(
+            username=data['email'],  # Use email as username
+            email=data['email'],
+            password=data['password'],
+            first_name=data['first_name'],
+            last_name=data['last_name']
+        )
+        
+        # Create security profile
+        profile = SecurityProfile.objects.create(
+            user=user,
+            email=data['email'],
+            phone_number=data.get('phone_number', ''),
+            address=data.get('address', ''),
+            date_of_birth=data.get('date_of_birth'),
+            employee_id=employee_id,
+            status='pending'
+        )
+        
+        return Response({
+            'success': True, 
+            'message': 'Account created successfully. Awaiting approval.', 
+            'employee_id': employee_id,
+            'user_id': user.id
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Signup failed: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
     try:
         data = request.data
         
