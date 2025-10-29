@@ -76,9 +76,9 @@ def administrator_dashboard(request):
 def approve_security(request, security_id):
     """Approve a security guard application"""
     security_profile = get_object_or_404(SecurityProfile, id=security_id)
-    security_profile.is_approved = True
+    security_profile.status = 'approved'
     security_profile.save()
-    messages.success(request, f'Security guard {SecurityProfile.username} has been approved.')
+    messages.success(request, f'Security guard {security_profile.user.get_full_name() or security_profile.user.username} has been approved.')
     return redirect('adminstrator:administrator_dashboard')
 
 @login_required
@@ -87,7 +87,7 @@ def reject_security(request, security_id):
     security_profile = get_object_or_404(SecurityProfile, id=security_id)
     security_profile.status = 'rejected'
     security_profile.save()
-    messages.success(request, f'Security guard {SecurityProfile.user} has been rejected.')
+    messages.success(request, f'Security guard {security_profile.user.get_full_name() or security_profile.user.username} has been rejected.')
     return redirect('adminstrator:administrator_dashboard')
 
 @login_required

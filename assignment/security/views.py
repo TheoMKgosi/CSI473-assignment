@@ -64,7 +64,6 @@ def security_signup(request):
         # Create security profile
         SecurityProfile.objects.create(
             user=user,
-            email=data['email'],
             phone_number=data.get('phone_number', ''),
             address=data.get('address', ''),
             date_of_birth=data.get('date_of_birth'),

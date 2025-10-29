@@ -44,21 +44,21 @@ export const api = {
 
   // Auth endpoints
   async signupOfficer(officerData) {
-    return this.request('/api/security/signup/', {
+    return this.request('/security/signup/', {
       method: 'POST',
       body: officerData,
     });
   },
 
   async loginOfficer(credentials) {
-    return this.request('/api/security/login/', {
+    return this.request('/security/login/', {
       method: 'POST',
       body: credentials,
     });
   },
 
   async getOfficerProfile() {
-    return this.request('/api/security/profile/');
+    return this.request('/security/profile/');
   },
 
   // Patrol endpoints

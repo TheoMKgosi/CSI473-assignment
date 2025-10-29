@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_CONFIG } from '../utils/config';
 
 const LoginScreen = () => {
   const router = useRouter();
@@ -41,7 +42,7 @@ const LoginScreen = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8002/security/login/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/security/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,7 +59,7 @@ const LoginScreen = () => {
       // Store token and user data
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('userData', JSON.stringify(data.user));
-      
+
       Alert.alert('Success', data.message || 'Logged in successfully!');
       router.replace('/(tabs)');
       
@@ -75,7 +76,7 @@ const LoginScreen = () => {
       await AsyncStorage.setItem('token', 'demo-token');
       await AsyncStorage.setItem('userRole', 'security');
       await AsyncStorage.setItem('isDemo', 'true');
-      
+
       Alert.alert('Demo Mode', 'Using demo account');
       router.replace('/(tabs)');
     } catch (e) {

@@ -25,17 +25,11 @@ const SignupScreen = ({ navigation }) => {
       if (response.data.success) {
         Alert.alert(
           'Success! 🎉',
-          'Account created successfully! For immediate access, use our pre-approved demo accounts:\n\n' +
-          'Email: demo1@neighborhood.com\nPassword: demo123\n\n' +
-          'Or wait for admin approval of your new account.',
+          'Account created successfully! Please login with your credentials.',
           [
-            { 
-              text: 'Use Demo Account', 
+            {
+              text: 'Go to Login',
               onPress: () => navigation.navigate('Login')
-            },
-            { 
-              text: 'OK', 
-              style: 'cancel' 
             }
           ]
         );
@@ -48,20 +42,13 @@ const SignupScreen = ({ navigation }) => {
       if (error.response?.data?.errors) {
         Alert.alert('Signup Failed', error.response.data.errors);
       } else if (error.code === 'ERR_NETWORK') {
-        // Network error - offer demo accounts
+        // Network error - redirect to login
         Alert.alert(
           'Connection Issue',
-          'Cannot reach server. Use our pre-approved demo accounts for immediate access:',
+          'Cannot reach server. Please try logging in with a demo account.',
           [
             {
-              text: 'Use Demo Account 1',
-              onPress: () => {
-                navigation.navigate('Login');
-                // Pre-fill login form (you might need to use context or state management for this)
-              }
-            },
-            {
-              text: 'Use Demo Account 2', 
+              text: 'Go to Login',
               onPress: () => navigation.navigate('Login')
             },
             {
