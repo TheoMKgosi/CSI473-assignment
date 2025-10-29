@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Linking } from 'react-native';
 import axios from 'axios';
-
-const API_BASE_URL = 'https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev';
+import { API_BASE_URL } from './api';
 
 const SignupScreen = ({ navigation }) => {
   const [form, setForm] = useState({
@@ -21,7 +20,7 @@ const SignupScreen = ({ navigation }) => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/signup/`, form);
+      const response = await axios.post(`${API_BASE_URL}/members/signup/`, form);
       
       if (response.data.success) {
         Alert.alert(
