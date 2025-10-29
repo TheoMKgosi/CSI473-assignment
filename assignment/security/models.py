@@ -1,5 +1,8 @@
+# security/models.py
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class SecurityProfile(models.Model):
     """Security personnel profile extending Django's User model"""
@@ -14,12 +17,22 @@ class SecurityProfile(models.Model):
     address = models.TextField(blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
     employee_id = models.CharField(max_length=20, unique=True)
-    role = models.CharField(max_length=20, default='security', editable=False)
+    role = models.CharField(max_length=20, default='security')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-
+    
     class Meta:
         verbose_name = 'Security Profile'
         verbose_name_plural = 'Security Profiles'
 
     def __str__(self):
-        return f"Security Profile for {self.user}"
+        return f"{self.user.get_full_name()} - {self.employee_id}"
+
+# Signal to create security profile when user is created
+@receiver(post_save, sender=User)
+def create_security_profile(sender, instance, created, **kwargs):
+    if created:
+        SecurityProfile.objects.get_or_create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_security_profile(sender, instance, **kwargs):
+    instance.security_profile.save()
