@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,61 +6,219 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
-import { Camera } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ScanScreen = () => {
-  const [hasPermission, setHasPermission] = useState(null);
+  const [facing, setFacing] = useState('back');
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Mock route data
-  const routeData = {
+  // Mock route data - in real app, this would come from backend
+  const [routeData, setRouteData] = useState({
     currentLocation: 'Building A - Lobby',
     nextLocation: 'Building B - North Entrance',
     estimatedTime: '5 min',
     progress: 3,
     total: 8,
+    routeId: 'route-001',
+  });
+
+  useEffect(() => {
+    // Load route data when component mounts
+    loadRouteData();
+  }, []);
+
+  const loadRouteData = async () => {
+    try {
+      // In real app, this would fetch from your backend
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        // TODO: Replace with actual API call
+        // const response = await fetch('/api/security/current-route/', {
+        //   headers: { 'Authorization': `Bearer ${token}` }
+        // });
+        // const data = await response.json();
+        // setRouteData(data);
+      }
+    } catch (error) {
+      console.error('Failed to load route data:', error);
+    }
   };
 
-  const requestCameraPermission = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    setHasPermission(status === 'granted');
+  const handleStartScan = async () => {
+    if (!permission) {
+      await requestPermission();
+    }
+
+    if (!permission?.granted) {
+      Alert.alert(
+        'Camera Permission Required',
+        'This app needs camera access to scan QR codes for security checkpoints.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Settings', onPress: () => Linking.openSettings() },
+        ]
+      );
+      return;
+    }
+
     setCameraVisible(true);
+    setScanned(false);
   };
 
-  const handleBarCodeScanned = ({ type, data }) => {
+  const handleBarCodeScanned = async ({ type, data }) => {
+    if (scanned) return;
+    
     setScanned(true);
+    setIsLoading(true);
+
+    try {
+      // Validate and process the scanned QR code
+      const scanResult = await processQRCode(data);
+      
+      if (scanResult.success) {
+        Alert.alert(
+          'Checkpoint Verified! ✅',
+          `Location: ${scanResult.location}\n\nCheckpoint ${routeData.progress + 1} of ${routeData.total} completed successfully.`,
+          [
+            {
+              text: 'Continue',
+              onPress: () => {
+                updateRouteProgress();
+                setCameraVisible(false);
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Invalid QR Code ❌',
+          scanResult.message || 'This QR code is not valid for your current route.',
+          [{ text: 'Try Again', onPress: () => setScanned(false) }]
+        );
+      }
+    } catch (error) {
+      console.error('Scan processing error:', error);
+      Alert.alert(
+        'Scan Failed',
+        'Unable to process QR code. Please try again.',
+        [{ text: 'OK', onPress: () => setScanned(false) }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const processQRCode = async (qrData) => {
+    // Simulate API call to validate QR code
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // In real app, this would call your backend
+    // const token = await AsyncStorage.getItem('token');
+    // const response = await fetch('/api/security/validate-qr/', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     'Authorization': `Bearer ${token}`
+    //   },
+    //   body: JSON.stringify({ qr_data: qrData, route_id: routeData.routeId })
+    // });
+    // return await response.json();
+
+    // Mock validation logic
+    const validLocations = [
+      'Building B - North Entrance',
+      'Building C - Server Room',
+      'Parking Garage - Level 2',
+      'Main Gate - Security Booth'
+    ];
+
+    if (validLocations.includes(qrData)) {
+      return {
+        success: true,
+        location: qrData,
+        message: 'Checkpoint verified successfully'
+      };
+    } else {
+      return {
+        success: false,
+        message: 'This location is not part of your current route'
+      };
+    }
+  };
+
+  const updateRouteProgress = () => {
+    // Update local state - in real app, this would sync with backend
+    setRouteData(prev => ({
+      ...prev,
+      progress: Math.min(prev.progress + 1, prev.total),
+      currentLocation: prev.nextLocation,
+      nextLocation: getNextLocation(prev.nextLocation),
+    }));
+  };
+
+  const getNextLocation = (currentNext) => {
+    // Mock next location logic
+    const locations = [
+      'Building A - Lobby',
+      'Building B - North Entrance', 
+      'Building C - Server Room',
+      'Parking Garage - Level 2',
+      'Main Gate - Security Booth',
+      'Building D - Roof Access',
+      'Warehouse - Loading Bay',
+      'Admin Building - Rear Entrance'
+    ];
+    
+    const currentIndex = locations.indexOf(currentNext);
+    return locations[(currentIndex + 1) % locations.length];
+  };
+
+  const handleNextLocation = () => {
     Alert.alert(
-      'QR Code Scanned!',
-      `Location: ${data}\n\nScan successful! Moving to next checkpoint.`,
+      'Skip Checkpoint?',
+      'Are you sure you want to proceed to the next location without scanning? This will be recorded in your report.',
       [
-        {
-          text: 'OK',
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Proceed', 
+          style: 'destructive',
           onPress: () => {
-            setScanned(false);
-            setCameraVisible(false);
-            // In real app, this would update the route progress
-          },
+            updateRouteProgress();
+            Alert.alert('Skipped', 'Moving to next location. Remember to scan at the actual checkpoint.');
+          }
         },
       ]
     );
   };
 
+  const toggleCameraFacing = () => {
+    setFacing(current => (current === 'back' ? 'front' : 'back'));
+  };
+
   if (cameraVisible) {
-    if (hasPermission === null) {
+    if (!permission) {
       return (
         <View style={styles.cameraContainer}>
-          <Text>Requesting camera permission...</Text>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Requesting camera access...</Text>
         </View>
       );
     }
-    
-    if (hasPermission === false) {
+
+    if (!permission.granted) {
       return (
         <View style={styles.cameraContainer}>
-          <Text style={styles.permissionText}>No access to camera</Text>
-          <TouchableOpacity style={styles.button} onPress={() => setCameraVisible(false)}>
+          <Text style={styles.permissionText}>Camera permission is required to scan QR codes</Text>
+          <TouchableOpacity style={styles.button} onPress={requestPermission}>
+            <Text style={styles.buttonText}>Grant Permission</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={() => setCameraVisible(false)}>
             <Text style={styles.buttonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -69,22 +227,44 @@ const ScanScreen = () => {
 
     return (
       <View style={styles.cameraContainer}>
-        <Camera
+        <CameraView
           style={styles.camera}
-          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+          facing={facing}
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+          barcodeScannerSettings={{
+            barcodeTypes: ['qr', 'pdf417'],
+          }}
         >
           <View style={styles.overlay}>
-            <View style={styles.scanFrame} />
+            <View style={styles.scanFrameContainer}>
+              <View style={styles.scanFrame} />
+              {isLoading && (
+                <View style={styles.loadingOverlay}>
+                  <ActivityIndicator size="large" color="#007AFF" />
+                  <Text style={styles.loadingText}>Verifying...</Text>
+                </View>
+              )}
+            </View>
+            
             <Text style={styles.scanText}>Align QR code within the frame</Text>
             
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={() => setCameraVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close Camera</Text>
-            </TouchableOpacity>
+            <View style={styles.cameraControls}>
+              <TouchableOpacity 
+                style={styles.cameraButton}
+                onPress={toggleCameraFacing}
+              >
+                <Text style={styles.cameraButtonText}>Flip Camera</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.cameraButton, styles.closeButton]}
+                onPress={() => setCameraVisible(false)}
+              >
+                <Text style={styles.cameraButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </Camera>
+        </CameraView>
       </View>
     );
   }
@@ -92,11 +272,11 @@ const ScanScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.routeCard}>
-        <Text style={styles.sectionTitle}>Current Route</Text>
+        <Text style={styles.sectionTitle}>Current Patrol Route</Text>
         
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
-            Progress: {routeData.progress}/{routeData.total} locations
+            Checkpoints: {routeData.progress}/{routeData.total} completed
           </Text>
           <View style={styles.progressBar}>
             <View 
@@ -115,7 +295,7 @@ const ScanScreen = () => {
           </View>
           
           <View style={styles.locationItem}>
-            <Text style={styles.locationLabel}>Next in Route:</Text>
+            <Text style={styles.locationLabel}>Next Checkpoint:</Text>
             <Text style={styles.nextLocationValue}>{routeData.nextLocation}</Text>
           </View>
           
@@ -128,24 +308,29 @@ const ScanScreen = () => {
 
       <TouchableOpacity 
         style={styles.scanButton}
-        onPress={requestCameraPermission}
+        onPress={handleStartScan}
+        disabled={isLoading}
       >
-        <Text style={styles.scanButtonText}>Scan QR Code</Text>
+        <Text style={styles.scanButtonText}>
+          {isLoading ? 'Processing...' : 'Scan QR Code'}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity 
-        style={styles.nextButton}
-        onPress={() => Alert.alert('Next Location', 'Proceeding to next location in route...')}
+        style={[styles.nextButton, isLoading && styles.buttonDisabled]}
+        onPress={handleNextLocation}
+        disabled={isLoading}
       >
-        <Text style={styles.nextButtonText}>Next Location</Text>
+        <Text style={styles.nextButtonText}>Next Checkpoint</Text>
       </TouchableOpacity>
 
       <View style={styles.instructions}>
         <Text style={styles.instructionsTitle}>Scanning Instructions:</Text>
-        <Text style={styles.instruction}>1. Position QR code within camera frame</Text>
-        <Text style={styles.instruction}>2. Ensure good lighting</Text>
-        <Text style={styles.instruction}>3. Hold steady until scan completes</Text>
-        <Text style={styles.instruction}>4. Verify location matches your route</Text>
+        <Text style={styles.instruction}>• Position QR code within camera frame</Text>
+        <Text style={styles.instruction}>• Ensure good lighting conditions</Text>
+        <Text style={styles.instruction}>• Hold device steady until scan completes</Text>
+        <Text style={styles.instruction}>• Verify location matches your route</Text>
+        <Text style={styles.instruction}>• Report any issues immediately</Text>
       </View>
     </View>
   );
@@ -193,6 +378,7 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     backgroundColor: '#34C759',
+    borderRadius: 4,
   },
   locationInfo: {
     marginTop: 10,
@@ -208,16 +394,21 @@ const styles = StyleSheet.create({
   locationLabel: {
     fontSize: 16,
     color: '#666',
+    flex: 1,
   },
   locationValue: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
+    flex: 1,
+    textAlign: 'right',
   },
   nextLocationValue: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#007AFF',
+    flex: 1,
+    textAlign: 'right',
   },
   scanButton: {
     backgroundColor: '#007AFF',
@@ -248,6 +439,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  buttonDisabled: {
+    backgroundColor: '#ccc',
+  },
   instructions: {
     backgroundColor: 'white',
     padding: 20,
@@ -263,20 +457,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 5,
-    paddingLeft: 10,
+    paddingLeft: 5,
   },
   cameraContainer: {
     flex: 1,
     backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   camera: {
     flex: 1,
+    width: '100%',
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
+  },
+  scanFrameContainer: {
+    position: 'relative',
   },
   scanFrame: {
     width: width * 0.7,
@@ -284,39 +485,79 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'white',
     backgroundColor: 'transparent',
+    borderRadius: 10,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  loadingText: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 10,
+    textAlign: 'center',
   },
   scanText: {
     color: 'white',
     fontSize: 16,
     marginTop: 20,
     textAlign: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 10,
+    borderRadius: 8,
   },
-  closeButton: {
+  cameraControls: {
     position: 'absolute',
     bottom: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%',
+  },
+  cameraButton: {
     backgroundColor: 'rgba(255,255,255,0.3)',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 20,
+    minWidth: 100,
+    alignItems: 'center',
   },
-  closeButtonText: {
+  closeButton: {
+    backgroundColor: 'rgba(255,59,48,0.7)',
+  },
+  cameraButtonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: '600',
   },
   permissionText: {
     color: 'white',
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 20,
+    paddingHorizontal: 20,
   },
   button: {
     backgroundColor: '#007AFF',
     padding: 15,
     borderRadius: 10,
+    marginVertical: 5,
+    minWidth: 150,
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#666',
   },
   buttonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: '600',
   },
 });
 

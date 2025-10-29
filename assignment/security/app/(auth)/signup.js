@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { api } from '../../utils/api';
 
 const SignUpScreen = () => {
   const router = useRouter();
@@ -21,34 +22,61 @@ const SignUpScreen = () => {
     password: '',
     confirmPassword: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async () => {
     const { firstName, lastName, email, password, confirmPassword } = formData;
-    if (!firstName || !lastName || !email || !password || !confirmPassword ) {
+    
+    // Validation
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
+    
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
+    
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
+
+    if (!email.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      // Call backend API
-      const { signupOfficer } = await import('../utils/api');
-      await signupOfficer({
+      await api.signupOfficer({
         first_name: firstName,
         last_name: lastName,
-        email,
+        email: email.toLowerCase().trim(),
         password,
       });
-      Alert.alert('Success', 'Account created successfully! Please login.');
-      router.replace('/(auth)/login');
+      
+      Alert.alert(
+        'Success', 
+        'Account created successfully! Please login with your credentials.',
+        [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+      );
+      
     } catch (error) {
-      Alert.alert('Signup Failed', error.message || 'Could not create account');
+      console.error('Signup error:', error);
+      let errorMessage = 'Could not create account. Please try again.';
+      
+      if (error.message.includes('email') || error.message.includes('Email')) {
+        errorMessage = 'This email is already registered. Please use a different email or login.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Signup Failed', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,7 +93,7 @@ const SignUpScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.title}>Create Security Account</Text>
         
         <View style={styles.nameRow}>
           <TextInput
@@ -73,12 +101,14 @@ const SignUpScreen = () => {
             placeholder="First Name"
             value={formData.firstName}
             onChangeText={(text) => updateFormData('firstName', text)}
+            editable={!isLoading}
           />
           <TextInput
             style={[styles.input, styles.halfInput]}
             placeholder="Last Name"
             value={formData.lastName}
             onChangeText={(text) => updateFormData('lastName', text)}
+            editable={!isLoading}
           />
         </View>
         
@@ -89,14 +119,16 @@ const SignUpScreen = () => {
           onChangeText={(text) => updateFormData('email', text)}
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!isLoading}
         />
         
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="Password (min. 6 characters)"
           value={formData.password}
           onChangeText={(text) => updateFormData('password', text)}
           secureTextEntry
+          editable={!isLoading}
         />
         
         <TextInput
@@ -105,14 +137,26 @@ const SignUpScreen = () => {
           value={formData.confirmPassword}
           onChangeText={(text) => updateFormData('confirmPassword', text)}
           secureTextEntry
+          editable={!isLoading}
         />
         
-        <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-          <Text style={styles.signUpButtonText}>Create Account</Text>
+        <TouchableOpacity 
+          style={[
+            styles.signUpButton, 
+            isLoading && styles.signUpButtonDisabled
+          ]} 
+          onPress={handleSignUp}
+          disabled={isLoading}
+        >
+          <Text style={styles.signUpButtonText}>
+            {isLoading ? 'Creating Account...' : 'Create Account'}
+          </Text>
         </TouchableOpacity>
+        
         <TouchableOpacity 
           style={styles.loginLink}
           onPress={() => router.replace('/(auth)/login')}
+          disabled={isLoading}
         >
           <Text style={styles.loginText}>
             Already have an account? Login
@@ -161,6 +205,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
+  },
+  signUpButtonDisabled: {
+    backgroundColor: '#ccc',
   },
   signUpButtonText: {
     color: 'white',
