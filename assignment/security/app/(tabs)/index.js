@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,37 +8,33 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../utils/api';
+import { api } from '../../utils/api';
 
 const HomeScreen = () => {
-  const router = useRouter();
   const [officerData, setOfficerData] = useState(null);
+  const [complianceData, setComplianceData] = useState([
+    { title: 'On-time Patrols', value: '0%', status: 'No Data' },
+    { title: 'Incident Reports', value: '0%', status: 'No Data' },
+    { title: 'Equipment Check', value: '0%', status: 'No Data' },
+    { title: 'Client Feedback', value: 'N/A', status: 'No Data' },
+  ]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const defaultOfficerData = {
     name: 'Security Officer',
     badgeNumber: 'Not assigned',
-    shift: 'Shift not set',
     complianceRate: 0,
     completedPatrols: 0,
-    pendingTasks: 0,
     lastUpdate: 'Just now',
   };
 
-  const complianceData = [
-    { title: 'On-time Patrols', value: '0%', status: 'No Data' },
-    { title: 'Incident Reports', value: '0%', status: 'No Data' },
-    { title: 'Equipment Check', value: '0%', status: 'No Data' },
-    { title: 'Client Feedback', value: 'N/A', status: 'No Data' },
-  ];
-
-  const loadOfficerData = async () => {
+  const loadOfficerData = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      
+
       if (!token || token === 'demo-token') {
         // Demo mode or no token
         setOfficerData({
@@ -50,24 +46,56 @@ const HomeScreen = () => {
           completedPatrols: 47,
           pendingTasks: 3,
         });
+        setComplianceData([
+          { title: 'On-time Patrols', value: '95%', status: 'Excellent' },
+          { title: 'Incident Reports', value: '80%', status: 'Good' },
+          { title: 'Equipment Check', value: '100%', status: 'Excellent' },
+          { title: 'Client Feedback', value: '92%', status: 'Excellent' },
+        ]);
         return;
       }
 
-      // TODO: Replace with actual API call to get officer profile
-      // const profile = await api.getOfficerProfile(token);
-      // setOfficerData(profile);
-      
-      // For now, using mock data
+      // Get actual officer profile from API
+      const profileResponse = await api.getOfficerProfile();
+      const profileData = profileResponse.profile;
+      const userData = profileResponse.user;
+
+      // Get compliance data
+      const complianceResponse = await api.getComplianceData();
+
       setOfficerData({
         ...defaultOfficerData,
-        name: 'John Smith',
-        badgeNumber: 'SG-247',
-        shift: 'Night Shift (10 PM - 6 AM)',
-        complianceRate: 98.5,
-        completedPatrols: 47,
-        pendingTasks: 3,
+        name: `${userData.first_name} ${userData.last_name}`,
+        badgeNumber: profileData.employee_id,
+        complianceRate: complianceResponse.compliance_rate,
+        completedPatrols: complianceResponse.completed_patrols,
       });
-      
+
+      // Update compliance metrics
+      const metrics = complianceResponse.compliance_metrics;
+      setComplianceData([
+        {
+          title: 'On-time Patrols',
+          value: `${metrics.on_time_patrols}%`,
+          status: metrics.on_time_patrols >= 80 ? 'Excellent' : metrics.on_time_patrols >= 60 ? 'Good' : 'Needs Improvement'
+        },
+        {
+          title: 'Incident Reports',
+          value: `${metrics.incident_reports}%`,
+          status: metrics.incident_reports >= 80 ? 'Excellent' : metrics.incident_reports >= 60 ? 'Good' : 'Needs Improvement'
+        },
+        {
+          title: 'Equipment Check',
+          value: `${metrics.equipment_check}%`,
+          status: metrics.equipment_check >= 80 ? 'Excellent' : metrics.equipment_check >= 60 ? 'Good' : 'Needs Improvement'
+        },
+        {
+          title: 'Client Feedback',
+          value: `${metrics.client_feedback}%`,
+          status: metrics.client_feedback >= 80 ? 'Excellent' : metrics.client_feedback >= 60 ? 'Good' : 'Needs Improvement'
+        },
+      ]);
+
     } catch (error) {
       console.error('Failed to load officer data:', error);
       Alert.alert('Error', 'Failed to load profile data');
@@ -76,11 +104,11 @@ const HomeScreen = () => {
       setIsLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadOfficerData();
-  }, []);
+  }, [loadOfficerData]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -118,11 +146,10 @@ const HomeScreen = () => {
         <Text style={styles.greeting}>Welcome back,</Text>
         <Text style={styles.officerName}>{data.name}</Text>
         <Text style={styles.badge}>Badge: {data.badgeNumber}</Text>
-        <Text style={styles.shift}>{data.shift}</Text>
       </View>
 
       <View style={styles.statsContainer}>
-        <Text style={styles.sectionTitle}>Today's Overview</Text>
+        <Text style={styles.sectionTitle}>Today&apos;s Overview</Text>
         
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
@@ -133,16 +160,6 @@ const HomeScreen = () => {
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{data.completedPatrols}</Text>
             <Text style={styles.statLabel}>Completed Patrols</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, styles.pending]}>{data.pendingTasks}</Text>
-            <Text style={styles.statLabel}>Pending Tasks</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{data.shift.split(' ')[0]}</Text>
-            <Text style={styles.statLabel}>Current Shift</Text>
           </View>
         </View>
       </View>

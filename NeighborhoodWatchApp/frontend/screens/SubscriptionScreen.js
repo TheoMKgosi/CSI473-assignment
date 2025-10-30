@@ -1,55 +1,149 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from './api';
 
 const SubscriptionScreen = () => {
-  const [status, setStatus] = useState('active');
-  const [plan, setPlan] = useState('premium');
+  const [status, setStatus] = useState('none');
+  const [plan, setPlan] = useState('basic');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [subscriptionData, setSubscriptionData] = useState(null);
 
-  const handlePayment = (amount, planName) => {
-    setShowPaymentModal(false);
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      Alert.alert(
-        'Payment Successful! 🎉',
-        `Your ${planName} subscription has been activated.\n\nAmount: P${amount}`,
-        [
-          {
-            text: 'Great!',
-            onPress: () => {
-              setStatus('active');
-              setPlan(planName.toLowerCase());
-              // Simulate push notification
-              Alert.alert('📢 Notification', 'Your subscription has been activated! Enjoy premium features.');
-            }
-          }
-        ]
-      );
-    }, 1000);
+  useEffect(() => {
+    loadSubscriptionStatus();
+  }, []);
+
+  const loadSubscriptionStatus = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/members/subscription/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.has_subscription) {
+          setSubscriptionData(data.subscription);
+          setStatus(data.subscription.status);
+          setPlan(data.subscription.type);
+        } else {
+          setStatus('none');
+          setPlan('basic');
+        }
+      } else {
+        console.error('Failed to load subscription:', data);
+        Alert.alert('Error', 'Failed to load subscription status');
+      }
+    } catch (error) {
+      console.error('Error loading subscription:', error);
+      Alert.alert('Error', 'Failed to load subscription status');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCancel = () => {
+  const handlePayment = async (amount, planName) => {
+    setShowPaymentModal(false);
+
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Error', 'Authentication required');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/members/pay-subscription/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subscription_type: planName.toLowerCase(),
+          amount: amount,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert(
+          'Payment Successful! 🎉',
+          `Your ${planName} subscription has been activated.`,
+          [
+            {
+              text: 'Great!',
+              onPress: () => {
+                loadSubscriptionStatus(); // Reload subscription status
+                Alert.alert('📢 Notification', 'Your subscription has been activated! Enjoy premium features.');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Payment Failed', data.errors || 'Failed to process payment');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      Alert.alert('Error', 'Failed to process payment. Please try again.');
+    }
+  };
+
+  const handleCancel = async () => {
     setShowCancelModal(false);
-    
-    Alert.alert(
-      'Subscription Cancelled',
-      'Your premium subscription will remain active until the end of your billing period.',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            setStatus('cancelled');
-            setPlan('basic');
-            // Simulate push notification
-            Alert.alert('📢 Notification', 'Your subscription has been cancelled. You will lose access to premium features after your billing period ends.');
-          }
-        }
-      ]
-    );
+
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Error', 'Authentication required');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/members/cancel-subscription/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert(
+          'Subscription Cancelled',
+          'Your premium subscription will remain active until the end of your billing period.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                loadSubscriptionStatus(); // Reload subscription status
+                Alert.alert('📢 Notification', 'Your subscription has been cancelled. You will lose access to premium features after your billing period ends.');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Cancellation Failed', data.errors || 'Failed to cancel subscription');
+      }
+    } catch (error) {
+      console.error('Cancellation error:', error);
+      Alert.alert('Error', 'Failed to cancel subscription. Please try again.');
+    }
   };
 
   const toggleNotifications = () => {
@@ -88,6 +182,11 @@ const SubscriptionScreen = () => {
       priceValue: 100
     },
   ];
+
+  // Update plan active status based on current subscription
+  plans.forEach(p => {
+    p.active = p.name.toLowerCase() === plan && status === 'active';
+  });
 
   const paymentHistory = [
     { id: 1, date: 'Oct 28, 2024', amount: 'P100', status: 'Completed', type: 'Premium Renewal' },
@@ -182,13 +281,22 @@ const SubscriptionScreen = () => {
     </Modal>
   );
 
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#61a3d2" />
+        <Text style={styles.loadingText}>Loading subscription...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
         <Text style={styles.title}>Subscription Management</Text>
-        <View style={[styles.statusBadge, status === 'active' ? styles.activeBadge : styles.cancelledBadge]}>
+        <View style={[styles.statusBadge, status === 'active' ? styles.activeBadge : status === 'cancelled' ? styles.cancelledBadge : styles.inactiveBadge]}>
           <Text style={styles.statusText}>
-            {status === 'active' ? '🟢 ACTIVE' : '🔴 CANCELLED'}
+            {status === 'active' ? '🟢 ACTIVE' : status === 'cancelled' ? '🔴 CANCELLED' : '⚪ NO SUBSCRIPTION'}
           </Text>
         </View>
       </View>
@@ -236,7 +344,7 @@ const SubscriptionScreen = () => {
         ))}
       </View>
 
-      {status === 'active' && plan === 'premium' && (
+      {status === 'active' && plan === 'premium' && subscriptionData && (
         <View style={styles.actionsSection}>
           <Text style={styles.sectionTitle}>Manage Subscription</Text>
           <View style={styles.actionButtons}>
@@ -312,9 +420,18 @@ const SubscriptionScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
   scrollContent: {
     paddingBottom: 30,
@@ -347,6 +464,9 @@ const styles = StyleSheet.create({
   },
   cancelledBadge: {
     backgroundColor: '#ffebee',
+  },
+  inactiveBadge: {
+    backgroundColor: '#f5f5f5',
   },
   statusText: {
     fontSize: 12,

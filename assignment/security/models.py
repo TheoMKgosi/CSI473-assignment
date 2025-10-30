@@ -27,3 +27,20 @@ class SecurityProfile(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.employee_id}"
 
+
+class ScanLog(models.Model):
+    """Log of QR code scans by security guards"""
+    security_guard = models.ForeignKey(SecurityProfile, on_delete=models.CASCADE, related_name='scan_logs')
+    qr_data = models.TextField()
+    comment = models.TextField(blank=True)
+    location = models.CharField(max_length=255, blank=True)
+    scanned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Scan Log'
+        verbose_name_plural = 'Scan Logs'
+        ordering = ['-scanned_at']
+
+    def __str__(self):
+        return f"Scan by {self.security_guard.user.get_full_name()} at {self.scanned_at}"
+

@@ -8,9 +8,11 @@ import {
   Dimensions,
   ActivityIndicator,
   Linking,
+  TextInput,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '../../utils/api';
 
 const ScanScreen = () => {
   const [facing, setFacing] = useState('back');
@@ -18,55 +20,29 @@ const ScanScreen = () => {
   const [scanned, setScanned] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Mock route data - in real app, this would come from backend
-  const [routeData, setRouteData] = useState({
-    currentLocation: 'Building A - Lobby',
-    nextLocation: 'Building B - North Entrance',
-    estimatedTime: '5 min',
-    progress: 3,
-    total: 8,
-    routeId: 'route-001',
-  });
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
-    // Load route data when component mounts
-    loadRouteData();
+    // Component mounted
   }, []);
 
-  const loadRouteData = async () => {
-    try {
-      // In real app, this would fetch from your backend
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/security/current-route/', {
-        //   headers: { 'Authorization': `Bearer ${token}` }
-        // });
-        // const data = await response.json();
-        // setRouteData(data);
-      }
-    } catch (error) {
-      console.error('Failed to load route data:', error);
-    }
-  };
-
   const handleStartScan = async () => {
-    if (!permission) {
-      await requestPermission();
+    let currentPermission = permission;
+
+    if (!currentPermission || !currentPermission.granted) {
+      currentPermission = await requestPermission();
     }
 
-    if (!permission?.granted) {
+    if (!currentPermission.granted) {
       Alert.alert(
         'Camera Permission Required',
         'This app needs camera access to scan QR codes for security checkpoints.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Settings', 
+          {
+            text: 'Settings',
             onPress: () => {
-              // Use Alert instead of Linking to avoid errors
-              Alert.alert('Open Settings', 'Please enable camera permissions in your device settings.');
+              Linking.openSettings();
             }
           },
         ]
@@ -89,14 +65,28 @@ const ScanScreen = () => {
       const scanResult = await processQRCode(data);
       
       if (scanResult.success) {
+        // Log the scan with comment
+        try {
+          const token = await AsyncStorage.getItem('token');
+          if (token !== 'demo-token') {
+            await api.logScan({
+              qr_data: data,
+              comment: comment,
+              location: scanResult.location,
+            });
+          }
+          setComment(''); // Clear comment after logging
+        } catch (logError) {
+          console.error('Failed to log scan:', logError);
+        }
+
         Alert.alert(
-          'Checkpoint Verified! ✅',
-          `Location: ${scanResult.location}\n\nCheckpoint ${routeData.progress + 1} of ${routeData.total} completed successfully.`,
+          'QR Code Scanned! ✅',
+          `Location: ${scanResult.location}`,
           [
             {
-              text: 'Continue',
+              text: 'OK',
               onPress: () => {
-                updateRouteProgress();
                 setCameraVisible(false);
               },
             },
@@ -122,75 +112,42 @@ const ScanScreen = () => {
   };
 
   const processQRCode = async (qrData) => {
-    // Simulate API call to validate QR code
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock validation logic
-    const validLocations = [
-      'Building B - North Entrance',
-      'Building C - Server Room',
-      'Parking Garage - Level 2',
-      'Main Gate - Security Booth'
-    ];
-
-    if (validLocations.includes(qrData)) {
-      return {
-        success: true,
-        location: qrData,
-        message: 'Checkpoint verified successfully'
-      };
-    } else {
-      return {
-        success: false,
-        message: 'This location is not part of your current route'
-      };
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (token === 'demo-token') {
+        // Mock validation for demo
+        const validLocations = [
+          'Building A - Lobby',
+          'Building B - North Entrance',
+          'Building C - Server Room',
+          'Parking Garage - Level 2',
+          'Main Gate - Security Booth',
+          'Building D - Roof Access',
+          'Warehouse - Loading Bay',
+          'Admin Building - Rear Entrance'
+        ];
+        if (validLocations.includes(qrData)) {
+          return {
+            success: true,
+            location: qrData,
+            message: 'QR code validated successfully'
+          };
+        } else {
+          return {
+            success: false,
+            message: 'Invalid QR code'
+          };
+        }
+      } else {
+        const result = await api.validateQRCode(qrData);
+        return result;
+      }
+    } catch (error) {
+      return { success: false, message: 'Network error validating QR code' };
     }
   };
 
-  const updateRouteProgress = () => {
-    // Update local state - in real app, this would sync with backend
-    setRouteData(prev => ({
-      ...prev,
-      progress: Math.min(prev.progress + 1, prev.total),
-      currentLocation: prev.nextLocation,
-      nextLocation: getNextLocation(prev.nextLocation),
-    }));
-  };
 
-  const getNextLocation = (currentNext) => {
-    // Mock next location logic
-    const locations = [
-      'Building A - Lobby',
-      'Building B - North Entrance', 
-      'Building C - Server Room',
-      'Parking Garage - Level 2',
-      'Main Gate - Security Booth',
-      'Building D - Roof Access',
-      'Warehouse - Loading Bay',
-      'Admin Building - Rear Entrance'
-    ];
-    
-    const currentIndex = locations.indexOf(currentNext);
-    return locations[(currentIndex + 1) % locations.length];
-  };
-
-  const handleNextLocation = () => {
-    Alert.alert(
-      'Skip Checkpoint?',
-      'Are you sure you want to proceed to the next location without scanning? This will be recorded in your report.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Proceed', 
-          style: 'destructive',
-          onPress: () => {
-            updateRouteProgress();
-            Alert.alert('Skipped', 'Moving to next location. Remember to scan at the actual checkpoint.');
-          }
-        },
-      ]
-    );
-  };
 
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
@@ -266,42 +223,16 @@ const ScanScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.routeCard}>
-        <Text style={styles.sectionTitle}>Current Patrol Route</Text>
-        
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            Checkpoints: {routeData.progress}/{routeData.total} completed
-          </Text>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: `${(routeData.progress / routeData.total) * 100}%` }
-              ]} 
-            />
-          </View>
-        </View>
-
-        <View style={styles.locationInfo}>
-          <View style={styles.locationItem}>
-            <Text style={styles.locationLabel}>Current Location:</Text>
-            <Text style={styles.locationValue}>{routeData.currentLocation}</Text>
-          </View>
-          
-          <View style={styles.locationItem}>
-            <Text style={styles.locationLabel}>Next Checkpoint:</Text>
-            <Text style={styles.nextLocationValue}>{routeData.nextLocation}</Text>
-          </View>
-          
-          <View style={styles.locationItem}>
-            <Text style={styles.locationLabel}>Estimated Time:</Text>
-            <Text style={styles.locationValue}>{routeData.estimatedTime}</Text>
-          </View>
-        </View>
+      <View style={styles.instructions}>
+        <Text style={styles.instructionsTitle}>Scanning Instructions:</Text>
+        <Text style={styles.instruction}>• Position QR code within camera frame</Text>
+        <Text style={styles.instruction}>• Ensure good lighting conditions</Text>
+        <Text style={styles.instruction}>• Hold device steady until scan completes</Text>
+        <Text style={styles.instruction}>• Verify location matches your route</Text>
+        <Text style={styles.instruction}>• Report any issues immediately</Text>
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.scanButton}
         onPress={handleStartScan}
         disabled={isLoading}
@@ -311,21 +242,16 @@ const ScanScreen = () => {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={[styles.nextButton, isLoading && styles.buttonDisabled]}
-        onPress={handleNextLocation}
-        disabled={isLoading}
-      >
-        <Text style={styles.nextButtonText}>Next Checkpoint</Text>
-      </TouchableOpacity>
-
-      <View style={styles.instructions}>
-        <Text style={styles.instructionsTitle}>Scanning Instructions:</Text>
-        <Text style={styles.instruction}>• Position QR code within camera frame</Text>
-        <Text style={styles.instruction}>• Ensure good lighting conditions</Text>
-        <Text style={styles.instruction}>• Hold device steady until scan completes</Text>
-        <Text style={styles.instruction}>• Verify location matches your route</Text>
-        <Text style={styles.instruction}>• Report any issues immediately</Text>
+      <View style={styles.commentSection}>
+        <Text style={styles.commentLabel}>Comment (optional):</Text>
+        <TextInput
+          style={styles.commentInput}
+          value={comment}
+          onChangeText={setComment}
+          placeholder="Add a comment about this scan..."
+          multiline
+          numberOfLines={3}
+        />
       </View>
     </View>
   );
@@ -441,6 +367,28 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 15,
+    marginBottom: 20,
+  },
+  commentSection: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 15,
+    marginTop: 20,
+  },
+  commentLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 16,
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   instructionsTitle: {
     fontSize: 18,

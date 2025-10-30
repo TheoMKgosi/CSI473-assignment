@@ -53,8 +53,9 @@ def administrator_dashboard(request):
     rejected_security = SecurityProfile.objects.filter(status='rejected')
     
     # Get all member profiles
-    pending_members = UserProfile.objects.filter(is_approved=False)
-    approved_members = UserProfile.objects.filter(is_approved=True)
+    pending_members = UserProfile.objects.filter(status='pending')
+    approved_members = UserProfile.objects.filter(status='approved')
+    rejected_members = UserProfile.objects.filter(status='rejected')
     
     context = {
         'pending_security': pending_security,
@@ -62,12 +63,14 @@ def administrator_dashboard(request):
         'rejected_security': rejected_security,
         'pending_members': pending_members,
         'approved_members': approved_members,
+        'rejected_members': rejected_members,
         'not_members': pending_members,
         'pending_security_count': pending_security.count(),
         'approved_security_count': approved_security.count(),
         'rejected_security_count': rejected_security.count(),
         'pending_members_count': pending_members.count(),
         'approved_members_count': approved_members.count(),
+        'rejected_members_count': rejected_members.count(),
         'not_members_count': pending_members.count(),
     }
     return render(request, 'adminstrator/dashboard.html', context)
@@ -138,19 +141,56 @@ def subscription_statistics(request):
 @login_required
 def security_compliance_dashboard(request):
     """Security guard compliance dashboard"""
-    # Get all compliance records
-    all_compliance = SecurityCompliance.objects.order_by('security_guard', '-date')
+    # Get all security guards
+    all_guards = SecurityProfile.objects.filter(status='approved')
 
-    # Filter records with compliance > 80% (using Python property)
-    compliant_records = [record for record in all_compliance if record.compliance_score > 80]
-    total_guards = all_compliance.count()
-    compliant_count = len(compliant_records)
+    # Get latest compliance record for each guard
+    compliance_records = []
+    compliant_count = 0
+    total_compliance_scores = []
+
+    for guard in all_guards:
+        latest_record = SecurityCompliance.objects.filter(security_guard=guard).order_by('-date').first()
+        if latest_record:
+            compliance_score = latest_record.compliance_score
+            total_compliance_scores.append(compliance_score)
+            is_compliant = compliance_score >= 80
+            if is_compliant:
+                compliant_count += 1
+
+            # Determine score and progress classes
+            if compliance_score >= 80:
+                score_class = 'score-high'
+                progress_class = 'progress-high'
+            elif compliance_score >= 60:
+                score_class = 'score-medium'
+                progress_class = 'progress-medium'
+            else:
+                score_class = 'score-low'
+                progress_class = 'progress-low'
+
+            compliance_records.append({
+                'security_guard': guard,
+                'date': latest_record.date,
+                'compliance_score': compliance_score,
+                'is_compliant': is_compliant,
+                'score_class': score_class,
+                'progress_class': progress_class,
+                'patrols_completed': latest_record.patrols_completed,
+                'tasks_completed': latest_record.tasks_completed,
+                'total_tasks_assigned': latest_record.total_tasks_assigned,
+                'incidents_reported': latest_record.incidents_reported,
+                'on_time': latest_record.on_time,
+                'notes': latest_record.notes,
+            })
+
+    total_guards = len(all_guards)
     non_compliant_count = total_guards - compliant_count
 
-    # Overall compliance average (for all records)
+    # Overall compliance average
     overall_compliance = (
-        sum(record.compliance_score for record in all_compliance) / total_guards
-        if total_guards > 0 else 0
+        sum(total_compliance_scores) / len(total_compliance_scores)
+        if total_compliance_scores else 0
     )
 
     # Determine overall compliance class
@@ -161,28 +201,21 @@ def security_compliance_dashboard(request):
     else:
         overall_compliance_class = 'compliance-danger'
 
-    # Prepare compliance records with additional data (only >80%)
-    compliance_records = []
-    for record in compliant_records:
-        score_class = 'score-high'
-        progress_class = 'progress-high'
-        compliance_records.append({
-            'security_guard': record.security_guard,
-            'date': record.date,
-            'compliance_score': record.compliance_score,
-            'is_compliant': record.is_compliant,
-            'score_class': score_class,
-            'progress_class': progress_class,
-            'patrols_completed': record.patrols_completed,
-            'tasks_completed': record.tasks_completed,
-            'total_tasks_assigned': record.total_tasks_assigned,
-            'incidents_reported': record.incidents_reported,
-            'on_time': record.on_time,
-            'notes': record.notes,
-        })
-
     # Sort by compliance score (lowest first for attention)
     compliance_records.sort(key=lambda x: x['compliance_score'])
+
+    # Get scanned QR codes (QR codes of security guards)
+    scanned_qr_codes = []
+    for guard in all_guards:
+        try:
+            profile = guard.user.userprofile
+            if profile.qr_code:
+                scanned_qr_codes.append({
+                    'image': profile.qr_code,
+                    'user': guard.user,
+                })
+        except UserProfile.DoesNotExist:
+            pass
 
     context = {
         'total_guards': total_guards,
@@ -191,6 +224,7 @@ def security_compliance_dashboard(request):
         'overall_compliance': round(overall_compliance, 1),
         'overall_compliance_class': overall_compliance_class,
         'compliance_records': compliance_records,
+        'scanned_qr_codes': scanned_qr_codes,
     }
     return render(request, 'adminstrator/security_compliance.html', context)
 
@@ -318,18 +352,20 @@ def create_administrator(request):
 def approve_member(request, member_id):
     """Approve a member application"""
     member_profile = get_object_or_404(UserProfile, id=member_id)
-    member_profile.is_approved = True
+    member_profile.status = 'approved'
+    member_profile.is_approved = True  # Keep for backward compatibility
     member_profile.save()
-    messages.success(request, f'Member {UserProfile.full_name} has been approved.')
+    messages.success(request, f'Member {member_profile.full_name} has been approved.')
     return redirect('adminstrator:administrator_dashboard')
 
 @login_required
 def reject_member(request, member_id):
     """Reject a member application"""
     member_profile = get_object_or_404(UserProfile, id=member_id)
-    member_profile.is_approved = 'rejected'
+    member_profile.status = 'rejected'
+    member_profile.is_approved = False  # Keep for backward compatibility
     member_profile.save()
-    messages.success(request, f'Member {UserProfile.user.username} has been rejected.')
+    messages.success(request, f'Member {member_profile.user.get_full_name() or member_profile.user.username} has been rejected.')
     return redirect('adminstrator:administrator_dashboard')
 
 @login_required

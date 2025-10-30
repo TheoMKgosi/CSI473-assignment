@@ -56,12 +56,8 @@
             <div class="stat-label">Overall Compliance</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number compliance-good">{{ compliant_count }}</div>
-            <div class="stat-label">Meeting 60%+ Requirement</div>
-        </div>
-        <div class="stat-card">
             <div class="stat-number {% if non_compliant_count > 0 %}compliance-danger{% else %}compliance-good{% endif %}">{{ non_compliant_count }}</div>
-            <div class="stat-label">Below 60% Requirement</div>
+            <div class="stat-label">Below 80% Requirement</div>
         </div>
         <div class="stat-card">
             <div class="stat-number">{{ total_guards }}</div>
@@ -70,7 +66,7 @@
     </div>
 
     <div class="compliance-list">
-        <h3>Individual Guard Performance <span class="requirement-badge">60% Minimum</span></h3>
+        <h3>Individual Guard Performance <span class="requirement-badge">80% Minimum</span></h3>
         {% if compliance_records %}
             {% for record in compliance_records %}
                 <div class="compliance-item">
@@ -126,24 +122,18 @@
     </div>
 
     <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
-        <h3>Compliance Scoring System</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-            <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                <strong>Task Completion:</strong> Up to 70% of score
-                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Based on tasks completed vs assigned</div>
+        <h3>Scanned QR Codes</h3>
+        {% if scanned_qr_codes %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                {% for qr in scanned_qr_codes %}
+                    <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                        <img src="{{ qr.image.url }}" alt="Scanned QR Code" style="width: 100px; height: 100px;">
+                        <div style="margin-top: 5px; font-size: 0.9em; color: #666;">{{ qr.user.get_full_name|default:qr.user.username }}</div>
+                    </div>
+                {% endfor %}
             </div>
-            <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                <strong>Punctuality:</strong> 10% bonus
-                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Added if guard arrives on time</div>
-            </div>
-            <div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                <strong>Patrol Performance:</strong> Up to 20% bonus
-                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">5% per completed patrol (max 20%)</div>
-            </div>
-            <div style="padding: 15px; background: #d4edda; border-radius: 5px; border: 1px solid #c3e6cb;">
-                <strong>Minimum Requirement:</strong> 60%
-                <div style="font-size: 0.9em; color: #155724; margin-top: 5px;">Guards below this need intervention</div>
-            </div>
-        </div>
+        {% else %}
+            <p>No scanned QR codes available.</p>
+        {% endif %}
     </div>
 {% endblock %}

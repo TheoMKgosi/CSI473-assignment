@@ -1,4 +1,5 @@
 // app/utils/api.js
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_CONFIG } from './config';
 
 export const api = {
@@ -17,7 +18,7 @@ export const api = {
     try {
       const token = await AsyncStorage.getItem('token');
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        config.headers.Authorization = `Token ${token}`;
       }
     } catch (error) {
       console.log('No token found');
@@ -61,22 +62,29 @@ export const api = {
     return this.request('/security/profile/');
   },
 
-  // Patrol endpoints
-  async getCurrentRoute() {
-    return this.request('/api/security/current-route/');
+  async getComplianceData() {
+    return this.request('/security/compliance/');
   },
 
-  async validateQRCode(qrData, routeId) {
-    return this.request('/api/security/validate-qr/', {
+  // Patrol endpoints
+  async validateQRCode(qrData) {
+    return this.request('/security/validate-qr/', {
       method: 'POST',
-      body: { qr_data: qrData, route_id: routeId },
+      body: { qr_data: qrData },
     });
   },
 
   async updateRouteProgress(routeId, checkpointId) {
-    return this.request('/api/security/update-progress/', {
+    return this.request('/security/update-progress/', {
       method: 'POST',
       body: { route_id: routeId, checkpoint_id: checkpointId },
+    });
+  },
+
+  async logScan(scanData) {
+    return this.request('/security/log-scan/', {
+      method: 'POST',
+      body: scanData,
     });
   },
 };

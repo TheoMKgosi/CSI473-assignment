@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_CONFIG } from '../utils/config';
+import { API_CONFIG } from '../../utils/config';
 
 const LoginScreen = () => {
   const router = useRouter();

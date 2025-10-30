@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { api } from '../utils/api';
+import { api } from '../../utils/api';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -33,19 +33,18 @@ const SettingsScreen = () => {
   const loadOfficerProfile = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      
+
       if (token && token !== 'demo-token') {
-        // TODO: Uncomment when backend is ready
-        // const profile = await api.getOfficerProfile();
-        // setOfficerProfile(profile);
-        
-        // Mock data for now
+        const profileResponse = await api.getOfficerProfile();
+        const profileData = profileResponse.profile;
+        const userData = profileResponse.user;
+
         setOfficerProfile({
-          name: 'John Smith',
-          badgeNumber: 'SG-247',
-          email: 'john.smith@security.com',
-          department: 'Patrol Division',
-          joinDate: 'January 15, 2023',
+          name: `${userData.first_name} ${userData.last_name}`,
+          badgeNumber: profileData.employee_id,
+          email: userData.email,
+          department: 'Security Division', // Mock for now
+          joinDate: 'Unknown', // Not in API response
         });
       } else {
         // Demo mode
@@ -98,30 +97,24 @@ const SettingsScreen = () => {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: performLogout,
-        },
-      ]
-    );
+  const handleLogout = async () => {
+    try {
+      // Clear all stored data
+      await AsyncStorage.multiRemove(['token', 'userData', 'userRole', 'isDemo']);
+      // Navigate to login
+      router.push('/(auth)/login');
+    } catch (e) {
+      console.error('Logout error:', e);
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
   };
 
   const performLogout = async () => {
     try {
       // Clear all stored data
-      await AsyncStorage.multiRemove(['token', 'userRole', 'isDemo']);
+      await AsyncStorage.multiRemove(['token', 'userData', 'userRole', 'isDemo']);
       // Navigate to login
-      router.replace('/(auth)/login');
+      router.push('/(auth)/login');
     } catch (e) {
       console.error('Logout error:', e);
       Alert.alert('Error', 'Failed to logout. Please try again.');
@@ -169,32 +162,6 @@ const SettingsScreen = () => {
             onValueChange={() => toggleSetting('notifications')}
             trackColor={{ false: '#767577', true: '#81b0ff' }}
             thumbColor={settings.notifications ? '#007AFF' : '#f4f3f4'}
-          />
-        </View>
-
-        <View style={styles.settingItem}>
-          <View style={styles.settingTextContainer}>
-            <Text style={styles.settingLabel}>GPS Tracking</Text>
-            <Text style={styles.settingDescription}>Enable location tracking during patrols</Text>
-          </View>
-          <Switch
-            value={settings.gpsTracking}
-            onValueChange={() => toggleSetting('gpsTracking')}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={settings.gpsTracking ? '#007AFF' : '#f4f3f4'}
-          />
-        </View>
-
-        <View style={styles.settingItem}>
-          <View style={styles.settingTextContainer}>
-            <Text style={styles.settingLabel}>Auto Upload Reports</Text>
-            <Text style={styles.settingDescription}>Automatically sync incident reports</Text>
-          </View>
-          <Switch
-            value={settings.autoUpload}
-            onValueChange={() => toggleSetting('autoUpload')}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={settings.autoUpload ? '#007AFF' : '#f4f3f4'}
           />
         </View>
 

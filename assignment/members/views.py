@@ -8,7 +8,9 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.core.files import File
+from datetime import date, timedelta
 from .models import UserProfile
+from adminstrator.models import Subscription, House
 
 # --- Setup logger ---
 logger = logging.getLogger(__name__)
@@ -99,9 +101,14 @@ def login(request):
             logger.info(f"User authenticated: {email}")
             try:
                 profile = user.userprofile
-                if not profile.is_approved:
-                    logger.warning(f"User {email} not approved yet.")
-                    return Response({'errors': 'Account pending admin approval'}, status=status.HTTP_403_FORBIDDEN)
+                if profile.status != 'approved':
+                    logger.warning(f"User {email} account status: {profile.status}")
+                    if profile.status == 'pending':
+                        return Response({'errors': 'Account pending admin approval'}, status=status.HTTP_403_FORBIDDEN)
+                    elif profile.status == 'rejected':
+                        return Response({'errors': 'Account has been rejected'}, status=status.HTTP_403_FORBIDDEN)
+                    else:
+                        return Response({'errors': 'Account status unknown'}, status=status.HTTP_403_FORBIDDEN)
                 
                 from rest_framework.authtoken.models import Token
                 token, created = Token.objects.get_or_create(user=user)
@@ -165,17 +172,153 @@ def panic(request):
 @permission_classes([IsAuthenticated])
 def pay_subscription(request):
     logger.info(f"Subscription payment attempt by {request.user.email}")
-    payment_date = request.data.get('payment_date')
-    amount = request.data.get('amount')
-    if not amount:
-        logger.warning("Payment attempt with missing amount")
-        return Response({'errors': 'Amount is required'}, status=400)
-    logger.debug(f"Payment details: amount={amount}, date={payment_date}")
-    return Response({'success': True, 'message': 'Payment processed'}, status=200)
+    try:
+        data = request.data
+        subscription_type = data.get('subscription_type', 'premium')
+        amount = data.get('amount')
+
+        if not amount:
+            logger.warning("Payment attempt with missing amount")
+            return Response({'errors': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate subscription type
+        if subscription_type not in ['basic', 'premium', 'enterprise']:
+            logger.warning(f"Invalid subscription type: {subscription_type}")
+            return Response({'errors': 'Invalid subscription type'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if user already has an active subscription
+        existing_subscription = Subscription.objects.filter(
+            user=request.user,
+            status__in=['active', 'pending']
+        ).first()
+
+        if existing_subscription:
+            logger.warning(f"User {request.user.email} already has an active subscription")
+            return Response({'errors': 'You already have an active subscription'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get user's house (assuming they have one, or create a default)
+        try:
+            house = House.objects.filter(owner=request.user).first()
+            if not house:
+                # Create a default house if none exists
+                house = House.objects.create(
+                    address=request.user.userprofile.address,
+                    owner=request.user,
+                    house_number=f"USER_{request.user.id}",
+                    bedrooms=1,
+                    bathrooms=1,
+                    square_footage=1000,
+                    property_type='house'
+                )
+                logger.info(f"Created default house for {request.user.email}")
+        except Exception as e:
+            logger.error(f"Error getting/creating house for {request.user.email}: {e}")
+            return Response({'errors': 'Unable to process subscription'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Calculate subscription dates
+        start_date = date.today()
+        if subscription_type == 'basic':
+            end_date = start_date + timedelta(days=365)  # 1 year
+            monthly_fee = 0
+        elif subscription_type == 'premium':
+            end_date = start_date + timedelta(days=30)  # 1 month
+            monthly_fee = 100
+        else:  # enterprise
+            end_date = start_date + timedelta(days=30)  # 1 month
+            monthly_fee = 500
+
+        # Create subscription
+        subscription = Subscription.objects.create(
+            user=request.user,
+            house=house,
+            subscription_type=subscription_type,
+            status='active',
+            start_date=start_date,
+            end_date=end_date,
+            monthly_fee=monthly_fee
+        )
+
+        logger.info(f"Subscription created for {request.user.email}: {subscription_type}")
+        return Response({
+            'success': True,
+            'message': 'Subscription activated successfully',
+            'subscription': {
+                'id': subscription.id,
+                'type': subscription_type,
+                'status': 'active',
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat(),
+                'monthly_fee': monthly_fee
+            }
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        logger.exception(f"Error processing subscription payment for {request.user.email}")
+        return Response({'errors': f'Payment processing failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_subscription(request):
+    logger.info(f"Subscription status requested by {request.user.email}")
+    try:
+        subscription = Subscription.objects.filter(user=request.user).order_by('-created_at').first()
+
+        if not subscription:
+            return Response({
+                'has_subscription': False,
+                'subscription_type': 'basic',
+                'status': 'none'
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            'has_subscription': True,
+            'subscription': {
+                'id': subscription.id,
+                'type': subscription.subscription_type,
+                'status': subscription.status,
+                'start_date': subscription.start_date.isoformat(),
+                'end_date': subscription.end_date.isoformat(),
+                'monthly_fee': subscription.monthly_fee,
+                'created_at': subscription.created_at.isoformat()
+            }
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.exception(f"Error getting subscription for {request.user.email}")
+        return Response({'errors': f'Failed to get subscription: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def cancel_subscription(request):
-    logger.info(f"Subscription cancelled by {request.user.email}")
-    return Response({'success': True, 'message': 'Subscription cancelled'}, status=200)
+    logger.info(f"Subscription cancellation attempt by {request.user.email}")
+    try:
+        # Find active subscription
+        subscription = Subscription.objects.filter(
+            user=request.user,
+            status='active'
+        ).first()
+
+        if not subscription:
+            logger.warning(f"No active subscription found for {request.user.email}")
+            return Response({'errors': 'No active subscription found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Cancel the subscription
+        subscription.status = 'cancelled'
+        subscription.save()
+
+        logger.info(f"Subscription cancelled for {request.user.email}")
+        return Response({
+            'success': True,
+            'message': 'Subscription cancelled successfully',
+            'subscription': {
+                'id': subscription.id,
+                'status': 'cancelled',
+                'end_date': subscription.end_date.isoformat()
+            }
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.exception(f"Error cancelling subscription for {request.user.email}")
+        return Response({'errors': f'Cancellation failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

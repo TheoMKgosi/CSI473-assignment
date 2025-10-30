@@ -9,6 +9,7 @@ urlpatterns = [
     path('forum/', views.forum, name='forum'),
     path('patrol-stats/', views.patrol_stats, name='patrol_stats'),
     path('panic/', views.panic, name='panic'),
+    path('subscription/', views.get_subscription, name='get_subscription'),
     path('pay-subscription/', views.pay_subscription, name='pay_subscription'),
     path('cancel-subscription/', views.cancel_subscription, name='cancel_subscription'),
 ]

@@ -43,7 +43,7 @@ class MemberAPITestCase(APITestCase):
 
     def test_login_success(self):
         user = User.objects.create_user(username='test@example.com', email='test@example.com', password='testpass123')
-        UserProfile.objects.create(user=user, full_name='Test User', phone='1234567890', address='123 Test St', is_approved=True)
+        UserProfile.objects.create(user=user, full_name='Test User', phone='1234567890', address='123 Test St', is_approved=True, status='approved')
         data = {'email': 'test@example.com', 'password': 'testpass123'}
         response = self.client.post('/members/login/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)

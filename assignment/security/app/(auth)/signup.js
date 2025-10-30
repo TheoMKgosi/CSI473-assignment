@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { API_CONFIG } from '../utils/config';
+import { API_CONFIG } from '../../utils/config';
 
 const SignupScreen = () => {
   const router = useRouter();
