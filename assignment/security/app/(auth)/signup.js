@@ -5,13 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { API_CONFIG } from '../../utils/config';
+import { showAlert, showError } from '../../utils/alert';
 
 const SignupScreen = () => {
   const router = useRouter();
@@ -29,17 +29,17 @@ const SignupScreen = () => {
 
     // Validation
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showError('Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      showError('Password must be at least 6 characters');
       return;
     }
 
@@ -68,15 +68,20 @@ const SignupScreen = () => {
         throw new Error(data.error || 'Signup failed');
       }
 
-      Alert.alert(
+      showAlert(
         'Success',
-        data.message || 'Account created successfully! Please wait for administrator approval.',
-        [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+        'Account created successfully! Please login with your credentials.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/login'),
+          },
+        ]
       );
 
     } catch (error) {
       console.error('Signup error:', error);
-      Alert.alert('Signup Failed', error.message || 'Could not create account. Please try again.');
+      showError(error.message || 'Could not create account. Please try again.', 'Signup Failed');
     } finally {
       setIsLoading(false);
     }

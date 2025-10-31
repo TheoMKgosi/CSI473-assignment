@@ -5,13 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_CONFIG } from '../../utils/config';
+import { showAlert, showError, showSuccess } from '../../utils/alert';
 
 const LoginScreen = () => {
   const router = useRouter();
@@ -35,7 +35,7 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Please fill in all fields');
       return;
     }
 
@@ -60,12 +60,12 @@ const LoginScreen = () => {
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('userData', JSON.stringify(data.user));
 
-      Alert.alert('Success', data.message || 'Logged in successfully!');
+      showSuccess(data.message || 'Logged in successfully!');
       router.replace('/(tabs)');
       
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Error', error.message || 'Failed to login. Please check your credentials.');
+      showError(error.message || 'Failed to login. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -77,10 +77,10 @@ const LoginScreen = () => {
       await AsyncStorage.setItem('userRole', 'security');
       await AsyncStorage.setItem('isDemo', 'true');
 
-      Alert.alert('Demo Mode', 'Using demo account');
+      showAlert('Demo Mode', 'Using demo account');
       router.replace('/(tabs)');
     } catch (e) {
-      Alert.alert('Error', 'Failed to use demo account');
+      showError('Failed to use demo account');
     }
   };
 
@@ -130,7 +130,7 @@ const LoginScreen = () => {
           disabled={isLoading}
         >
           <Text style={styles.signUpText}>
-            Don't have an account? Sign Up
+            Don&apos;t have an account? Sign Up
           </Text>
         </TouchableOpacity>
         
@@ -145,9 +145,9 @@ const LoginScreen = () => {
         <TouchableOpacity style={styles.clearAuthButton} onPress={async () => {
           try {
             await AsyncStorage.multiRemove(['token', 'userData', 'userRole', 'isDemo']);
-            Alert.alert('Cleared', 'Authentication data cleared. Please login again.');
+            showAlert('Cleared', 'Authentication data cleared. Please login again.');
           } catch (e) {
-            Alert.alert('Error', 'Failed to clear auth data');
+            showError('Failed to clear auth data');
           }
         }}>
           <Text style={styles.clearAuthText}>Clear Auth Data</Text>

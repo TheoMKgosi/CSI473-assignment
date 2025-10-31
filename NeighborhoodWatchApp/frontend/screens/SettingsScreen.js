@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
+import { showAlert, showError } from '../utils/alert';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 
 const SettingsScreen = () => {
   const [settings, setSettings] = useState({
@@ -17,7 +18,7 @@ const SettingsScreen = () => {
     
     // Simulate push notification for important setting changes
     if (setting === 'emergencyAlerts' || setting === 'pushNotifications') {
-      Alert.alert(
+      showAlert(
         '📢 Notification Setting Updated',
         `${setting.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} ${!settings[setting] ? 'enabled' : 'disabled'}`,
         [{ text: 'OK' }]
@@ -26,16 +27,17 @@ const SettingsScreen = () => {
   };
 
   const handleClearData = () => {
-    Alert.alert(
+    showAlert(
       'Clear App Data',
-      'This will remove all cached data and preferences. This action cannot be undone.',
+      'This will remove all your personal data, settings, and login information. This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Clear Data',
           style: 'destructive',
           onPress: () => {
-            Alert.alert('Data Cleared', 'All app data has been cleared.');
+            // Clear all data
+            showAlert('Data Cleared', 'All app data has been cleared.');
           }
         }
       ]
@@ -43,13 +45,19 @@ const SettingsScreen = () => {
   };
 
   const handleContactSupport = () => {
-    Alert.alert(
+    showAlert(
       'Contact Support',
-      'Would you like to contact our support team?',
+      'Choose how you would like to contact our support team:',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Email Support', onPress: () => Alert.alert('Email', 'support@neighborhoodwatch.com') },
-        { text: 'Call Support', onPress: () => Alert.alert('Call', '+267-800-1234') }
+        {
+          text: 'Email Support',
+          onPress: () => showAlert('Email', 'support@neighborhoodwatch.com')
+        },
+        {
+          text: 'Call Support',
+          onPress: () => showAlert('Call', '+267-800-1234')
+        }
       ]
     );
   };

@@ -1,28 +1,70 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from './api';
+import { showAlert, showError, showSuccess } from '../utils/alert';
 
 const ProfileScreen = ({ navigation, route }) => {
-  const user = route.params?.user || { 
-    email: 'demo1@neighborhood.com', 
-    full_name: 'Sarah Johnson',
-    phone: '+267-123-4567',
-    address: '123 Oak Street, Gaborone'
-  };
-
   const [profile, setProfile] = useState({
-    fullName: user.full_name,
-    email: user.email,
-    phone: user.phone,
-    address: user.address,
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
     emergencyContact: '+267-765-4321',
     notifications: true,
     locationSharing: true
   });
 
+  const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [currentSubscription, setCurrentSubscription] = useState('basic'); // Mock current subscription
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        showError('Not logged in');
+        navigation.replace('Login');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/members/profile/`, {
+        headers: {
+          'Authorization': `Token ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUser(data.user);
+        setProfile({
+          fullName: data.user.full_name,
+          email: data.user.email,
+          phone: data.user.phone,
+          address: data.user.address,
+          emergencyContact: '+267-765-4321',
+          notifications: true,
+          locationSharing: true
+        });
+      } else {
+        showError('Failed to load profile');
+      }
+    } catch (error) {
+        showError('Network error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSave = () => {
-    Alert.alert('Success', 'Profile updated successfully!');
+    showSuccess('Profile updated successfully!');
     setIsEditing(false);
   };
 
@@ -33,6 +75,57 @@ const ProfileScreen = ({ navigation, route }) => {
   const toggleSetting = (setting) => {
     setProfile({ ...profile, [setting]: !profile[setting] });
   };
+
+  const handleUpgradeSubscription = async (plan) => {
+    if (!user || !user.email) {
+      Alert.alert('Error', 'Profile not loaded. Please wait and try again.');
+      return;
+    }
+
+    setIsUpgrading(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Error', 'Not logged in');
+        navigation.replace('Login');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/members/pay-subscription/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Token ${token}` : '',
+        },
+        body: JSON.stringify({
+          subscription_type: plan,
+          amount: plan === 'premium' ? 100 : 500,
+          email: user.email
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Success', `Upgraded to ${plan} plan!`);
+        setCurrentSubscription(plan);
+      } else {
+        Alert.alert('Error', data.errors || 'Upgrade failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error. Please try again.');
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -178,9 +271,46 @@ const ProfileScreen = ({ navigation, route }) => {
             <Text style={styles.statLabel}>Safety Score</Text>
           </View>
         </View>
-      </View>
+       </View>
 
-      {isEditing && (
+       <View style={styles.section}>
+         <Text style={styles.sectionTitle}>Subscription Plan</Text>
+         <Text style={styles.currentPlan}>Current Plan: <Text style={styles.planName}>{currentSubscription.toUpperCase()}</Text></Text>
+
+         <View style={styles.plansContainer}>
+           <View style={styles.planCard}>
+             <Text style={styles.planTitle}>Premium</Text>
+             <Text style={styles.planPrice}>P100/month</Text>
+             <Text style={styles.planFeatures}>• Priority alerts{'\n'}• Advanced analytics{'\n'}• 24/7 support</Text>
+             <TouchableOpacity
+               style={[styles.upgradeButton, (currentSubscription === 'premium' || isLoading || isUpgrading) && styles.upgradeButtonDisabled]}
+               onPress={() => handleUpgradeSubscription('premium')}
+               disabled={currentSubscription === 'premium' || isLoading || isUpgrading}
+             >
+               <Text style={styles.upgradeButtonText}>
+                 {isUpgrading && currentSubscription !== 'premium' ? 'Upgrading...' : currentSubscription === 'premium' ? 'Current Plan' : 'Upgrade'}
+               </Text>
+             </TouchableOpacity>
+           </View>
+
+           <View style={styles.planCard}>
+             <Text style={styles.planTitle}>Enterprise</Text>
+             <Text style={styles.planPrice}>P500/month</Text>
+             <Text style={styles.planFeatures}>• All Premium features{'\n'}• Custom integrations{'\n'}• Dedicated account manager</Text>
+             <TouchableOpacity
+               style={[styles.upgradeButton, (currentSubscription === 'enterprise' || isLoading || isUpgrading) && styles.upgradeButtonDisabled]}
+               onPress={() => handleUpgradeSubscription('enterprise')}
+               disabled={currentSubscription === 'enterprise' || isLoading || isUpgrading}
+             >
+               <Text style={styles.upgradeButtonText}>
+                 {isUpgrading && currentSubscription !== 'enterprise' ? 'Upgrading...' : currentSubscription === 'enterprise' ? 'Current Plan' : 'Upgrade'}
+               </Text>
+             </TouchableOpacity>
+           </View>
+         </View>
+       </View>
+
+       {isEditing && (
         <View style={styles.actions}>
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
             <Text style={styles.saveButtonText}>Save Changes</Text>
@@ -205,6 +335,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContent: {
     paddingBottom: 30,
@@ -360,11 +494,66 @@ const styles = StyleSheet.create({
     color: '#61a3d2',
     marginBottom: 5,
   },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
+   statLabel: {
+     fontSize: 12,
+     color: '#666',
+     textAlign: 'center',
+   },
+   currentPlan: {
+     fontSize: 16,
+     color: '#333',
+     marginBottom: 15,
+   },
+   planName: {
+     fontWeight: 'bold',
+     color: '#61a3d2',
+   },
+   plansContainer: {
+     flexDirection: 'row',
+     justifyContent: 'space-between',
+   },
+   planCard: {
+     backgroundColor: '#f8f9fa',
+     padding: 15,
+     borderRadius: 10,
+     width: '48%',
+     alignItems: 'center',
+   },
+   planTitle: {
+     fontSize: 18,
+     fontWeight: 'bold',
+     color: '#333',
+     marginBottom: 5,
+   },
+   planPrice: {
+     fontSize: 16,
+     color: '#61a3d2',
+     fontWeight: '600',
+     marginBottom: 10,
+   },
+   planFeatures: {
+     fontSize: 12,
+     color: '#666',
+     textAlign: 'center',
+     marginBottom: 15,
+     lineHeight: 18,
+   },
+   upgradeButton: {
+     backgroundColor: '#61a3d2',
+     paddingVertical: 8,
+     paddingHorizontal: 15,
+     borderRadius: 6,
+     width: '100%',
+     alignItems: 'center',
+   },
+   upgradeButtonDisabled: {
+     backgroundColor: '#cccccc',
+   },
+   upgradeButtonText: {
+     color: '#fff',
+     fontSize: 12,
+     fontWeight: '600',
+   },
   actions: {
     padding: 20,
   },

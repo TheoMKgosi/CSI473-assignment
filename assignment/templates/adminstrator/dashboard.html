@@ -9,32 +9,44 @@
             <p>You are logged in as an administrator.</p>
         </div>
 
-    <div class="stats">
-        <div class="stat-box">
-            <div class="stat-number">{{ pending_security_count }}</div>
-            <div>Pending Security</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number">{{ pending_members_count }}</div>
-            <div>Pending Members</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number">{{ approved_security_count }}</div>
-            <div>Approved Security</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number">{{ approved_members_count }}</div>
-            <div>Approved Members</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number">{{ rejected_security_count }}</div>
-            <div>Rejected Security</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number">{{ rejected_members_count }}</div>
-            <div>Rejected Members</div>
-        </div>
-    </div>
+     <div class="stats">
+         <div class="stat-box">
+             <div class="stat-number">{{ pending_security_count }}</div>
+             <div>Pending Security</div>
+         </div>
+         <div class="stat-box">
+             <div class="stat-number">{{ pending_members_count }}</div>
+             <div>Pending Members</div>
+         </div>
+         <div class="stat-box">
+             <div class="stat-number">{{ approved_security_count }}</div>
+             <div>Approved Security</div>
+         </div>
+         <div class="stat-box">
+             <div class="stat-number">{{ approved_members_count }}</div>
+             <div>Approved Members</div>
+         </div>
+         <div class="stat-box">
+             <div class="stat-number">{{ rejected_security_count }}</div>
+             <div>Rejected Security</div>
+         </div>
+         <div class="stat-box">
+             <div class="stat-number">{{ rejected_members_count }}</div>
+             <div>Rejected Members</div>
+         </div>
+         <div class="stat-box">
+             <div class="stat-number">{{ total_subscriptions }}</div>
+             <div>Total Subscriptions</div>
+         </div>
+         <div class="stat-box">
+             <div class="stat-number">{{ active_subscriptions }}</div>
+             <div>Active Subscriptions</div>
+         </div>
+         <div class="stat-box">
+             <div class="stat-number">P{{ monthly_revenue }}</div>
+             <div>Monthly Revenue</div>
+         </div>
+     </div>
 
     <div class="section">
         <h3>Pending Security Guard Applications</h3>
@@ -147,20 +159,26 @@
         {% endif %}
     </div>
 
-    <div>
-        <h3>Your Profile Information:</h3>
-        <p><strong>Username:</strong> {{ user.username }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Full Name:</strong> {{ user.get_full_name }}</p>
-        {% if user.administrator_profile.employee_id %}
-            <p><strong>Employee ID:</strong> {{ user.administrator_profile.employee_id }}</p>
-        {% endif %}
-        {% if user.administrator_profile.department %}
-            <p><strong>Department:</strong> {{ user.administrator_profile.department }}</p>
-        {% endif %}
-        {% if user.administrator_profile.phone_number %}
-            <p><strong>Phone:</strong> {{ user.administrator_profile.phone_number }}</p>
-        {% endif %}
-    </div>
+     <div class="section">
+         <h3>Subscription Management</h3>
+         <p>View detailed subscription statistics and revenue reports.</p>
+         <a href="{% url 'adminstrator:subscription_statistics' %}" class="btn btn-primary">View Subscription Statistics</a>
+     </div>
+
+     <div>
+         <h3>Your Profile Information:</h3>
+         <p><strong>Username:</strong> {{ user.username }}</p>
+         <p><strong>Email:</strong> {{ user.email }}</p>
+         <p><strong>Full Name:</strong> {{ user.get_full_name }}</p>
+         {% if user.administrator_profile.employee_id %}
+             <p><strong>Employee ID:</strong> {{ user.administrator_profile.employee_id }}</p>
+         {% endif %}
+         {% if user.administrator_profile.department %}
+             <p><strong>Department:</strong> {{ user.administrator_profile.department }}</p>
+         {% endif %}
+         {% if user.administrator_profile.phone_number %}
+             <p><strong>Phone:</strong> {{ user.administrator_profile.phone_number }}</p>
+         {% endif %}
+     </div>
 
 {% endblock %}

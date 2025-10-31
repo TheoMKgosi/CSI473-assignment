@@ -9,9 +9,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from .models import SecurityProfile, ScanLog
 from adminstrator.models import SecurityCompliance
+from members.models import PanicAlert
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -173,6 +175,78 @@ def security_profile(request):
 
 
 
+def validate_qr_data(qr_data, security_profile):
+    """Helper function to validate QR data for scanning"""
+    from members.models import UserProfile
+    from adminstrator.models import Route
+
+    qr_data_clean = qr_data.strip()
+
+    if qr_data_clean.startswith('member:'):
+        try:
+            parts = qr_data_clean.split(':')
+            if len(parts) >= 2:
+                member_id_str = parts[1].strip()
+                member_id = int(member_id_str)
+            else:
+                raise ValueError("No member ID found after 'member:'")
+
+            # Check if the member exists and is approved
+            try:
+                member = UserProfile.objects.get(id=member_id)
+                if member.status != 'approved':
+                    return {
+                        'success': False,
+                        'message': f'Member {member.full_name} is not approved'
+                    }
+            except UserProfile.DoesNotExist:
+                return {
+                    'success': False,
+                    'message': f'Member not found for ID {member_id}'
+                }
+
+            # Check if the guard has an assigned route that includes this member
+            assigned_route = Route.objects.filter(
+                assigned_security_guard=security_profile,
+                checkpoints__id=member_id
+            ).first()
+
+            if not assigned_route:
+                return {
+                    'success': False,
+                    'message': f'Member {member.full_name} is not part of your assigned patrol route'
+                }
+
+            return {
+                'success': True,
+                'type': 'member_checkpoint',
+                'member': {
+                    'id': member.id,
+                    'full_name': member.full_name,
+                    'address': member.address,
+                    'route_name': assigned_route.name,
+                },
+                'location': member.address,
+                'message': f'Member checkpoint {member.full_name} validated successfully for route {assigned_route.name}'
+            }
+        except (ValueError, IndexError) as e:
+            return {
+                'success': False,
+                'message': f'Invalid member QR code format: {str(e)}'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Error validating member QR code: {str(e)}'
+            }
+
+    # For now, only support member QR codes
+    return {
+        'success': False,
+        'message': 'Unsupported QR code type'
+    }
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def security_validate_qr(request):
@@ -184,7 +258,152 @@ def security_validate_qr(request):
         if not qr_data:
             return Response({'error': 'qr_data is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Mock validation logic - any valid location
+        # Check if it's a member QR code (format: "member:{user_id}")
+        qr_data_clean = qr_data.strip()  # Remove any whitespace
+        if qr_data_clean.startswith('member:'):
+            logger.info(f"Processing member QR code: '{qr_data}' (cleaned: '{qr_data_clean}')")
+            try:
+                # Split and get the member ID, handling potential extra colons
+                parts = qr_data_clean.split(':')
+                if len(parts) >= 2:
+                    member_id_str = parts[1].strip()
+                    member_id = int(member_id_str)
+                else:
+                    raise ValueError("No member ID found after 'member:'")
+
+                logger.info(f"Extracted member_id: {member_id}")
+                from members.models import UserProfile
+
+                # First check if the user exists
+                try:
+                    member_profile = UserProfile.objects.get(user_id=member_id)
+                    logger.info(f"Found member profile: {member_profile}, status: '{member_profile.status}'")
+                except UserProfile.DoesNotExist:
+                    logger.warning(f"UserProfile not found for user_id: {member_id}")
+                    # Let's also check if there are any UserProfiles at all
+                    total_profiles = UserProfile.objects.count()
+                    logger.info(f"Total UserProfiles in database: {total_profiles}")
+                    return Response({
+                        'success': False,
+                        'message': f'Member profile not found for ID {member_id}'
+                    })
+
+                # Check if approved - be more flexible with status checking
+                if member_profile.status not in ['approved', 'Approved']:
+                    logger.warning(f"Member {member_id} has status: '{member_profile.status}', not approved")
+                    return Response({
+                        'success': False,
+                        'message': f'Member status is {member_profile.status}, not approved'
+                    })
+
+                logger.info(f"Successfully validated member: {member_profile.full_name}")
+                return Response({
+                    'success': True,
+                    'type': 'member',
+                    'member': {
+                        'id': member_profile.user.id,
+                        'full_name': member_profile.full_name,
+                        'email': member_profile.user.email,
+                        'phone': member_profile.phone,
+                        'address': member_profile.address,
+                    },
+                    'message': f'Member {member_profile.full_name} verified successfully'
+                })
+            except (ValueError, IndexError) as e:
+                logger.error(f"Error parsing member QR code '{qr_data}': {e}")
+                return Response({
+                    'success': False,
+                    'message': f'Invalid member QR code format: {str(e)}'
+                })
+            except Exception as e:
+                logger.error(f"Unexpected error validating member QR code: {e}")
+                return Response({
+                    'success': False,
+                    'message': f'Error validating member QR code: {str(e)}'
+                })
+
+        # Check if it's a member checkpoint QR code for patrol routes
+        if qr_data_clean.startswith('member:'):
+            logger.info(f"Processing member checkpoint QR code: '{qr_data}' (cleaned: '{qr_data_clean}')")
+            try:
+                # Split and get the member ID
+                parts = qr_data_clean.split(':')
+                if len(parts) >= 2:
+                    member_id_str = parts[1].strip()
+                    member_id = int(member_id_str)
+                else:
+                    raise ValueError("No member ID found after 'member:'")
+
+                logger.info(f"Extracted member_id: {member_id}")
+                from members.models import UserProfile
+                from adminstrator.models import Route
+
+                # Check if the member exists and is approved
+                try:
+                    member = UserProfile.objects.get(id=member_id)
+                    if member.status != 'approved':
+                        logger.warning(f"Member {member_id} has status: '{member.status}', not approved")
+                        return Response({
+                            'success': False,
+                            'message': f'Member {member.full_name} is not approved'
+                        })
+                    logger.info(f"Found approved member: {member.full_name} - {member.address}")
+                except UserProfile.DoesNotExist:
+                    logger.warning(f"Member not found for id: {member_id}")
+                    return Response({
+                        'success': False,
+                        'message': f'Member not found for ID {member_id}'
+                    })
+
+                # Get the security guard's profile
+                try:
+                    security_profile = SecurityProfile.objects.get(user=request.user)
+                except SecurityProfile.DoesNotExist:
+                    logger.error(f"Security profile not found for {request.user.email}")
+                    return Response({
+                        'success': False,
+                        'message': 'Security profile not found'
+                    })
+
+                # Check if the guard has an assigned route that includes this member
+                assigned_route = Route.objects.filter(
+                    assigned_security_guard=security_profile,
+                    checkpoints__id=member_id
+                ).first()
+
+                if not assigned_route:
+                    logger.warning(f"Member {member_id} is not in {request.user.email}'s assigned route")
+                    return Response({
+                        'success': False,
+                        'message': f'Member {member.full_name} is not part of your assigned patrol route'
+                    })
+
+                logger.info(f"Successfully validated member checkpoint: {member.full_name} for guard {request.user.email}")
+                return Response({
+                    'success': True,
+                    'type': 'member_checkpoint',
+                    'member': {
+                        'id': member.id,
+                        'full_name': member.full_name,
+                        'address': member.address,
+                        'route_name': assigned_route.name,
+                    },
+                    'message': f'Member checkpoint {member.full_name} validated successfully for route {assigned_route.name}'
+                })
+            except (ValueError, IndexError) as e:
+                logger.error(f"Error parsing member checkpoint QR code '{qr_data}': {e}")
+                return Response({
+                    'success': False,
+                    'message': f'Invalid member checkpoint QR code format: {str(e)}'
+                })
+            except Exception as e:
+                logger.error(f"Unexpected error validating member checkpoint QR code: {e}")
+                return Response({
+                    'success': False,
+                    'message': f'Error validating member checkpoint QR code: {str(e)}'
+                })
+
+        # Check if it's a location QR code for patrol routes
         valid_locations = [
             'Building A - Lobby',
             'Building B - North Entrance',
@@ -199,14 +418,16 @@ def security_validate_qr(request):
         if qr_data in valid_locations:
             return Response({
                 'success': True,
+                'type': 'location',
                 'location': qr_data,
-                'message': 'QR code validated successfully'
+                'message': 'Location QR code validated successfully'
             })
-        else:
-            return Response({
-                'success': False,
-                'message': 'Invalid QR code'
-            })
+
+        # If neither member, house, nor location, it's invalid
+        return Response({
+            'success': False,
+            'message': 'Invalid QR code - not a recognized member, house, or location'
+        })
 
     except Exception as e:
         logger.exception("Error validating QR")
@@ -231,6 +452,81 @@ def security_update_progress(request):
     except Exception as e:
         logger.exception("Error updating progress")
         return Response({'error': f'Update failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def security_scan_qr(request):
+    logger.info(f"QR scan requested by {request.user.email}")
+    try:
+        data = request.data
+        qr_data = data.get('qr_data')
+        comment = data.get('comment', '')
+        scan_status = data.get('scan_status', 'completed')
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+
+        if not qr_data:
+            return Response({'error': 'qr_data is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get security profile
+        profile = SecurityProfile.objects.get(user=request.user)
+
+        # Validate the QR code inline
+        validation_result = validate_qr_data(qr_data, profile)
+        if not validation_result['success']:
+            return Response({'error': f'Validation failed: {validation_result["message"]}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Log the scan
+        scan_log = ScanLog.objects.create(
+            security_guard=profile,
+            qr_data=qr_data,
+            comment=comment,
+            location=validation_result.get('location') or validation_result.get('member', {}).get('address', ''),
+        )
+
+        # Update compliance if it's a member checkpoint scan
+        if validation_result.get('type') == 'member_checkpoint':
+            from adminstrator.models import SecurityCompliance
+            from datetime import date
+
+            today = date.today()
+            compliance, created = SecurityCompliance.objects.get_or_create(
+                security_guard=profile,
+                date=today,
+                defaults={
+                    'shift_start': '09:00:00',  # Default shift start
+                    'shift_end': '17:00:00',    # Default shift end
+                    'patrols_completed': 0,
+                    'incidents_reported': 0,
+                    'tasks_completed': 0,
+                    'total_tasks_assigned': 5,  # Default tasks
+                    'on_time': True,
+                    'notes': '',
+                }
+            )
+
+            # Increment patrols and tasks completed
+            compliance.patrols_completed += 1
+            compliance.tasks_completed += 1
+            compliance.save()
+
+            logger.info(f"Updated compliance for {request.user.email}: patrols_completed = {compliance.patrols_completed}, tasks_completed = {compliance.tasks_completed}")
+
+        logger.info(f"Scan completed for {request.user.email}: {qr_data}")
+        return Response({
+            'success': True,
+            'message': 'Scan logged successfully',
+            'scan_id': scan_log.id,
+            'validation': validation_result
+        }, status=status.HTTP_201_CREATED)
+
+    except SecurityProfile.DoesNotExist:
+        logger.error(f"Profile not found for {request.user.email}")
+        return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.exception("Error processing scan")
+        return Response({'error': f'Scan failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
@@ -327,3 +623,128 @@ def security_compliance(request):
     except SecurityProfile.DoesNotExist:
         logger.error(f"Profile not found for {request.user.email}")
         return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def security_route(request):
+    logger.info(f"Route data requested by {request.user.email}")
+    try:
+        profile = SecurityProfile.objects.get(user=request.user)
+
+        # Get assigned route
+        try:
+            route = profile.assigned_routes.first()  # Get the first assigned route
+            if route:
+                checkpoints = []
+                for member in route.checkpoints.all():
+                    checkpoints.append({
+                        'id': member.id,
+                        'full_name': member.full_name,
+                        'address': member.address,
+                        'qr_code_data': member.qr_code_data,
+                    })
+
+                route_data = {
+                    'id': route.id,
+                    'name': route.name,
+                    'description': route.description,
+                    'checkpoints': checkpoints,
+                    'total_checkpoints': len(checkpoints),
+                }
+            else:
+                route_data = None
+        except Exception as e:
+            logger.warning(f"Error getting route data: {e}")
+            route_data = None
+
+        # Get recent scans for progress tracking
+        from datetime import date, timedelta
+        today = date.today()
+        recent_scans = ScanLog.objects.filter(
+            security_guard=profile,
+            scanned_at__date__gte=today - timedelta(days=1)  # Last 24 hours
+        ).values_list('qr_data', flat=True)
+
+        return Response({
+            'route': route_data,
+            'recent_scans': list(recent_scans),
+        })
+
+    except SecurityProfile.DoesNotExist:
+        logger.error(f"Profile not found for {request.user.email}")
+        return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_panic_alerts(request):
+    logger.info(f"Panic alerts requested by {request.user.email}")
+    try:
+        # Only security personnel can access this
+        SecurityProfile.objects.get(user=request.user)
+
+        # Get active panic alerts
+        alerts = PanicAlert.objects.filter(status='active').order_by('-timestamp')
+
+        alert_data = []
+        for alert in alerts:
+            alert_data.append({
+                'id': alert.id,
+                'member_name': alert.member.get_full_name(),
+                'member_email': alert.member.email,
+                'address': alert.address,
+                'timestamp': alert.timestamp.isoformat(),
+                'status': alert.status
+            })
+
+        return Response({
+            'success': True,
+            'alerts': alert_data
+        })
+
+    except SecurityProfile.DoesNotExist:
+        logger.warning(f"Non-security user {request.user.email} tried to access panic alerts")
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+    except Exception as e:
+        logger.exception(f"Error getting panic alerts for {request.user.email}")
+        return Response({'error': f'Failed to get alerts: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def resolve_panic_alert(request):
+    logger.info(f"Panic alert resolution requested by {request.user.email}")
+    try:
+        data = request.data
+        alert_id = data.get('alert_id')
+        alert_status = data.get('status')  # 'resolved' or 'false_alarm'
+        notes = data.get('notes', '')
+
+        if not alert_id or alert_status not in ['resolved', 'false_alarm']:
+            return Response({'error': 'alert_id and valid status required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Only security personnel can resolve
+        profile = SecurityProfile.objects.get(user=request.user)
+
+        alert = PanicAlert.objects.get(id=alert_id)
+        alert.status = alert_status
+        alert.resolved_by = request.user
+        alert.resolved_at = timezone.now()
+        alert.notes = notes
+        alert.save()
+
+        logger.info(f"Panic alert {alert_id} resolved by {request.user.email} as {alert_status}")
+
+        return Response({
+            'success': True,
+            'message': f'Alert marked as {alert_status}'
+        })
+
+    except SecurityProfile.DoesNotExist:
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+    except PanicAlert.DoesNotExist:
+        return Response({'error': 'Alert not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.exception(f"Error resolving panic alert")
+        return Response({'error': f'Failed to resolve alert: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

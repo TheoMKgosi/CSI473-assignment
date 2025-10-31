@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { showAlert } from '../utils/alert';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
 const HomeScreen = ({ navigation, route }) => {
   const user = route.params?.user || { email: 'test@example.com', full_name: 'Test User' };
 
   const handleLogout = () => {
-    Alert.alert('Logged Out', 'You have been logged out.');
+    showAlert('Logged Out', 'You have been logged out.');
     navigation.replace('Login');
   };
 

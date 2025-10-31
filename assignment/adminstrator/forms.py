@@ -2,7 +2,8 @@ import uuid
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import AdministratorProfile
+from .models import AdministratorProfile, Route
+from security.models import SecurityProfile
 
 class AdministratorSignupForm(UserCreationForm):
     """Form for administrator registration"""
@@ -86,3 +87,23 @@ class AdministratorLoginForm(AuthenticationForm):
     """Form for administrator login"""
     username = forms.CharField(max_length=254, widget=forms.TextInput(attrs={'placeholder': 'Username'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Password'}))
+
+
+class RouteForm(forms.ModelForm):
+    """Form for creating and editing routes"""
+    class Meta:
+        model = Route
+        fields = ['name', 'description', 'checkpoints', 'assigned_security_guard']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show approved security guards
+        self.fields['assigned_security_guard'].queryset = SecurityProfile.objects.filter(status='approved')
+        # Only show approved members for checkpoints
+        from members.models import UserProfile
+        self.fields['checkpoints'].queryset = UserProfile.objects.filter(status='approved')
+        # Remove the default widget for checkpoints since we use custom checkboxes
+        self.fields['checkpoints'].widget = forms.MultipleHiddenInput()

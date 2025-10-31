@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, ScrollView } from 'react-native';
+import { showAlert, showError } from '../utils/alert';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, ScrollView } from 'react-native';
 
 const ForumScreen = ({ navigation }) => {
   const [posts, setPosts] = useState([]);
@@ -25,7 +26,7 @@ const ForumScreen = ({ navigation }) => {
 
   const handlePost = () => {
     if (!content.trim()) {
-      Alert.alert('Error', 'Please write a message.');
+      showError('Please write a message.');
       return;
     }
 
@@ -50,7 +51,7 @@ const ForumScreen = ({ navigation }) => {
     };
     setNotifications([newNotification, ...notifications]);
     
-    Alert.alert('Posted!', 'Your message is live. Neighbors will be notified.');
+    showAlert('Posted!', 'Your message is live. Neighbors will be notified.');
   };
 
   const likePost = (postId) => {
@@ -63,7 +64,7 @@ const ForumScreen = ({ navigation }) => {
     setPosts(posts.map(post => 
       post.id === postId ? { ...post, comments: post.comments + 1 } : post
     ));
-    Alert.alert('Comment', 'Comment feature added!');
+    showAlert('Comment', 'Comment feature added!');
   };
 
   const markNotificationAsRead = (notificationId) => {

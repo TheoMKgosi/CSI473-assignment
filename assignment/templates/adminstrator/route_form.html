@@ -1,0 +1,370 @@
+{% extends "adminstrator/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .route-form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .route-form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-title {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .house-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .house-checkbox-item:hover {
+            background: #e8f4fd;
+            border-color: #3498db;
+        }
+
+        .house-checkbox-item.selected {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .house-checkbox-item input[type="checkbox"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            accent-color: #28a745;
+        }
+
+        .house-info {
+            flex: 1;
+        }
+
+        .house-number {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 2px;
+        }
+
+        .house-address {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .select-all-container {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            background: #ecf0f1;
+            border-radius: 8px;
+            border: 2px solid #bdc3c7;
+        }
+
+        .select-all-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .select-all-btn:hover {
+            background: #2980b9;
+        }
+
+        .select-all-btn.deselect {
+            background: #e74c3c;
+        }
+
+        .select-all-btn.deselect:hover {
+            background: #c0392b;
+        }
+
+        .form-help {
+            color: #7f8c8d;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 2px solid #ecf0f1;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .route-form-container {
+                margin: 0 15px;
+            }
+
+            .route-form-card {
+                padding: 20px;
+            }
+
+            .checkbox-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle select all/deselect all functionality
+            const selectAllBtn = document.getElementById('select-all-btn');
+            const checkboxes = document.querySelectorAll('.house-checkbox');
+
+            if (selectAllBtn && checkboxes.length > 0) {
+                selectAllBtn.addEventListener('click', function() {
+                    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = !allChecked;
+                        updateCheckboxItem(checkbox);
+                    });
+
+                    updateSelectAllButton();
+                });
+
+                // Update select all button state when individual checkboxes change
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        updateCheckboxItem(checkbox);
+                        updateSelectAllButton();
+                    });
+                });
+
+                function updateCheckboxItem(checkbox) {
+                    const item = checkbox.closest('.house-checkbox-item');
+                    if (checkbox.checked) {
+                        item.classList.add('selected');
+                    } else {
+                        item.classList.remove('selected');
+                    }
+                }
+
+                function updateSelectAllButton() {
+                    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+                    if (checkedCount === 0) {
+                        selectAllBtn.textContent = 'Select All';
+                        selectAllBtn.classList.remove('deselect');
+                    } else if (checkedCount === checkboxes.length) {
+                        selectAllBtn.textContent = 'Deselect All';
+                        selectAllBtn.classList.add('deselect');
+                    } else {
+                        selectAllBtn.textContent = 'Select All';
+                        selectAllBtn.classList.remove('deselect');
+                    }
+                }
+
+                // Initialize checkbox states
+                checkboxes.forEach(checkbox => updateCheckboxItem(checkbox));
+                updateSelectAllButton();
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="route-form-container">
+        <div class="route-form-card">
+            <h1 class="form-title">{{ title }}</h1>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.name.id_for_label }}">Route Name</label>
+                    <input type="text" name="{{ form.name.name }}" value="{{ form.name.value|default:'' }}" class="form-control" id="{{ form.name.id_for_label }}" {% if form.name.field.required %}required{% endif %}>
+                    {% if form.name.errors %}
+                        <div class="error">{{ form.name.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+                    <textarea name="{{ form.description.name }}" class="form-control form-textarea" id="{{ form.description.id_for_label }}" {% if form.description.field.required %}required{% endif %}>{% if form.description.value %}{{ form.description.value }}{% endif %}</textarea>
+                    {% if form.description.errors %}
+                        <div class="error">{{ form.description.errors }}</div>
+                    {% endif %}
+                    <div class="form-help">Provide a brief description of this patrol route.</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Checkpoints (Member Addresses)</label>
+
+                    {% if form.checkpoints.field.queryset %}
+                        <div class="select-all-container">
+                            <button type="button" id="select-all-btn" class="select-all-btn">Select All</button>
+                            <span class="form-help">Click individual members or use Select All to quickly choose multiple checkpoint addresses.</span>
+                        </div>
+
+                        <div class="checkbox-grid">
+                            {% for member in form.checkpoints.field.queryset %}
+                                <label class="house-checkbox-item">
+                                    <input type="checkbox" name="checkpoints" value="{{ member.id }}" class="house-checkbox"
+                                           {% if member in form.checkpoints.value %}checked{% endif %}>
+                                    <div class="house-info">
+                                        <div class="house-number">{{ member.full_name }}</div>
+                                        <div class="house-address">{{ member.address }}</div>
+                                    </div>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="form-help">No approved members available. Please approve members first.</div>
+                    {% endif %}
+
+                    {% if form.checkpoints.errors %}
+                        <div class="error">{{ form.checkpoints.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.assigned_security_guard.id_for_label }}">Assigned Security Guard</label>
+                    <select name="{{ form.assigned_security_guard.name }}" class="form-control form-select" id="{{ form.assigned_security_guard.id_for_label }}">
+                        <option value="">-- Not Assigned --</option>
+                        {% for guard in form.assigned_security_guard.field.queryset %}
+                            <option value="{{ guard.id }}" {% if form.assigned_security_guard.value == guard.id %}selected{% endif %}>
+                                {{ guard.user.get_full_name|default:guard.user.username }} ({{ guard.employee_id }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.assigned_security_guard.errors %}
+                        <div class="error">{{ form.assigned_security_guard.errors }}</div>
+                    {% endif %}
+                    <div class="form-help">Leave blank if not assigning immediately. You can assign guards later from the route list.</div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        💾 Save Route
+                    </button>
+                    <a href="{% url 'adminstrator:route_list' %}" class="btn btn-secondary">
+                        ❌ Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

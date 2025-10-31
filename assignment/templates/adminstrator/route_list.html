@@ -1,0 +1,42 @@
+{% extends "adminstrator/base.html" %}
+
+{% block title %}Route Management{% endblock %}
+
+{% block content %}
+    <h1>Route Management</h1>
+
+    <div class="section">
+        <div class="section-header">
+            <h3>All Routes</h3>
+            <a href="{% url 'adminstrator:route_create' %}" class="btn btn-primary">Create New Route</a>
+        </div>
+
+        {% if routes %}
+            <div class="route-list">
+                {% for route in routes %}
+                    <div class="route-item">
+                        <div class="route-info">
+                            <h4>{{ route.name }}</h4>
+                            <p>{{ route.description|truncatechars:100|default:'No description' }}</p>
+                            <p><strong>Checkpoints:</strong> {{ route.checkpoints.count }}</p>
+                            <p><strong>Assigned to:</strong>
+                                {% if route.assigned_security_guard %}
+                                    {{ route.assigned_security_guard.user.get_full_name|default:route.assigned_security_guard.user.username }}
+                                {% else %}
+                                    Unassigned
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="route-actions">
+                            <a href="{% url 'adminstrator:route_edit' route.id %}" class="btn btn-secondary">Edit</a>
+                            <a href="{% url 'adminstrator:assign_route' route.id %}" class="btn btn-info">Assign</a>
+                            <a href="{% url 'adminstrator:route_delete' route.id %}" class="btn btn-danger">Delete</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No routes have been created yet.</p>
+        {% endif %}
+    </div>
+{% endblock %}

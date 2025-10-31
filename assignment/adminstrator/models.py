@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from security.models import SecurityProfile
+from members.models import UserProfile
 
 class AdministratorProfile(models.Model):
     """Administrator profile extending Django's User model"""
@@ -33,6 +35,8 @@ class House(models.Model):
         ('townhouse', 'Townhouse'),
     ])
     is_occupied = models.BooleanField(default=True)
+    qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
+    qr_code_data = models.TextField(blank=True, help_text="QR code data string for scanning")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -110,3 +114,31 @@ class SecurityCompliance(models.Model):
 
     def __str__(self):
         return f"{self.security_guard.user.username} - {self.date} ({self.compliance_score:.1f}%)"
+
+
+class Route(models.Model):
+    """Route model for security guard patrols"""
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    checkpoints = models.ManyToManyField(UserProfile, related_name='routes', blank=True)
+    assigned_security_guard = models.ForeignKey(
+        SecurityProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_routes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Route'
+        verbose_name_plural = 'Routes'
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['assigned_security_guard']),
+        ]
+
+    def __str__(self):
+        assigned = self.assigned_security_guard.user.get_full_name() if self.assigned_security_guard else "Unassigned"
+        return f"{self.name} - {assigned}"

@@ -4,15 +4,16 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   Dimensions,
   ActivityIndicator,
   Linking,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../utils/api';
+import { showAlert } from '../../utils/alert';
 
 const ScanScreen = () => {
   const [facing, setFacing] = useState('back');
@@ -21,10 +22,39 @@ const ScanScreen = () => {
   const [cameraVisible, setCameraVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [comment, setComment] = useState('');
+  const [routeData, setRouteData] = useState(null);
+  const [scannedCheckpoints, setScannedCheckpoints] = useState([]);
 
   useEffect(() => {
-    // Component mounted
+    loadRouteData();
   }, []);
+
+  const loadRouteData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (token && token !== 'demo-token') {
+        const route = await api.getRoute();
+        setRouteData(route.route);
+        setScannedCheckpoints(route.recent_scans || []);
+      } else {
+        // Demo route data
+        setRouteData({
+          id: 1,
+          name: 'Neighborhood Patrol',
+          description: 'Patrol member addresses and checkpoints',
+          checkpoints: [
+            { id: 1, full_name: 'John Smith', address: '123 Main St', qr_code_data: 'member:1' },
+            { id: 2, full_name: 'Jane Doe', address: '456 Oak Ave', qr_code_data: 'member:2' },
+            { id: 3, full_name: 'Bob Johnson', address: '789 Pine Rd', qr_code_data: 'member:3' },
+          ],
+          total_checkpoints: 3,
+        });
+        setScannedCheckpoints([]);
+      }
+    } catch (error) {
+      console.error('Failed to load route data:', error);
+    }
+  };
 
   const handleStartScan = async () => {
     let currentPermission = permission;
@@ -34,7 +64,7 @@ const ScanScreen = () => {
     }
 
     if (!currentPermission.granted) {
-      Alert.alert(
+      showAlert(
         'Camera Permission Required',
         'This app needs camera access to scan QR codes for security checkpoints.',
         [
@@ -43,7 +73,7 @@ const ScanScreen = () => {
             text: 'Settings',
             onPress: () => {
               Linking.openSettings();
-            }
+            },
           },
         ]
       );
@@ -61,28 +91,70 @@ const ScanScreen = () => {
     setIsLoading(true);
 
     try {
-      // Validate and process the scanned QR code
-      const scanResult = await processQRCode(data);
-      
-      if (scanResult.success) {
-        // Log the scan with comment
-        try {
-          const token = await AsyncStorage.getItem('token');
-          if (token !== 'demo-token') {
-            await api.logScan({
-              qr_data: data,
-              comment: comment,
-              location: scanResult.location,
-            });
-          }
+      const token = await AsyncStorage.getItem('token');
+
+      if (token === 'demo-token') {
+        // Demo mode: use existing validation logic
+        const scanResult = await processQRCode(data);
+
+        if (scanResult.success) {
           setComment(''); // Clear comment after logging
-        } catch (logError) {
-          console.error('Failed to log scan:', logError);
+
+          // Update scanned checkpoints for demo mode
+          if (scanResult.type === 'member') {
+            setScannedCheckpoints(prev => [...prev, data]);
+          }
+
+          const message = scanResult.type === 'member'
+            ? `Member Verified: ${scanResult.member.full_name}`
+            : `Location: ${scanResult.location}`;
+
+          showAlert(
+            'QR Code Scanned! ✅',
+            message,
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  setCameraVisible(false);
+                },
+              },
+            ]
+          );
+        } else {
+          showAlert(
+            'Invalid QR Code ❌',
+            scanResult.message || 'This QR code is not valid for your current route.',
+            [{ text: 'Try Again', onPress: () => setScanned(false) }]
+          );
+        }
+      } else {
+        // Real API mode: use combined scan endpoint
+        const scanResult = await api.scanQRCode({
+          qr_data: data,
+          comment: comment,
+          scan_status: 'completed',
+          // Add location data if available (would need geolocation permission)
+          // latitude: latitude,
+          // longitude: longitude,
+        });
+
+        setComment(''); // Clear comment after logging
+
+        const message = scanResult.validation.type === 'member'
+          ? `Member Verified: ${scanResult.validation.member.full_name}`
+          : scanResult.validation.type === 'member_checkpoint'
+          ? `Address Checkpoint: ${scanResult.validation.member.full_name}`
+          : `Location: ${scanResult.validation.location}`;
+
+        // Update scanned checkpoints if it's a member checkpoint QR
+        if (scanResult.validation?.type === 'member_checkpoint') {
+          setScannedCheckpoints(prev => [...prev, data]);
         }
 
-        Alert.alert(
+        showAlert(
           'QR Code Scanned! ✅',
-          `Location: ${scanResult.location}`,
+          message,
           [
             {
               text: 'OK',
@@ -92,16 +164,10 @@ const ScanScreen = () => {
             },
           ]
         );
-      } else {
-        Alert.alert(
-          'Invalid QR Code ❌',
-          scanResult.message || 'This QR code is not valid for your current route.',
-          [{ text: 'Try Again', onPress: () => setScanned(false) }]
-        );
       }
     } catch (error) {
       console.error('Scan processing error:', error);
-      Alert.alert(
+      showAlert(
         'Scan Failed',
         'Unable to process QR code. Please try again.',
         [{ text: 'OK', onPress: () => setScanned(false) }]
@@ -126,11 +192,31 @@ const ScanScreen = () => {
           'Warehouse - Loading Bay',
           'Admin Building - Rear Entrance'
         ];
+
+        // Check for demo member QR codes
+        if (qrData.startsWith('member:')) {
+          const memberId = qrData.split(':')[1];
+          return {
+            success: true,
+            type: 'member',
+            member: {
+              id: memberId,
+              full_name: `Demo Member ${memberId}`,
+              email: `member${memberId}@demo.com`,
+              phone: '555-0123',
+              address: '123 Demo Street',
+            },
+            message: 'Demo member verified successfully'
+          };
+        }
+
+        // Check for location QR codes
         if (validLocations.includes(qrData)) {
           return {
             success: true,
+            type: 'location',
             location: qrData,
-            message: 'QR code validated successfully'
+            message: 'Demo location validated successfully'
           };
         } else {
           return {
@@ -222,7 +308,7 @@ const ScanScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <View style={styles.instructions}>
         <Text style={styles.instructionsTitle}>Scanning Instructions:</Text>
         <Text style={styles.instruction}>• Position QR code within camera frame</Text>
@@ -232,15 +318,44 @@ const ScanScreen = () => {
         <Text style={styles.instruction}>• Report any issues immediately</Text>
       </View>
 
-      <TouchableOpacity
-        style={styles.scanButton}
-        onPress={handleStartScan}
-        disabled={isLoading}
-      >
-        <Text style={styles.scanButtonText}>
-          {isLoading ? 'Processing...' : 'Scan QR Code'}
-        </Text>
-      </TouchableOpacity>
+      {routeData && (
+        <View style={styles.routeCard}>
+          <Text style={styles.sectionTitle}>{routeData.name}</Text>
+          <Text style={styles.routeDescription}>{routeData.description}</Text>
+
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressText}>
+              Progress: {scannedCheckpoints.length} / {routeData.total_checkpoints} checkpoints
+            </Text>
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${(scannedCheckpoints.length / routeData.total_checkpoints) * 100}%`,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          <View style={styles.locationInfo}>
+            {routeData.checkpoints.map((checkpoint, index) => {
+              const isScanned = scannedCheckpoints.includes(checkpoint.qr_code_data);
+              return (
+                <View key={checkpoint.id} style={styles.locationItem}>
+                  <Text style={styles.locationLabel}>
+                    {index + 1}. {checkpoint.full_name} - {checkpoint.address}
+                  </Text>
+                  <Text style={isScanned ? styles.locationValue : styles.nextLocationValue}>
+                    {isScanned ? '✓ Scanned' : 'Pending'}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       <View style={styles.commentSection}>
         <Text style={styles.commentLabel}>Comment (optional):</Text>
@@ -253,7 +368,17 @@ const ScanScreen = () => {
           numberOfLines={3}
         />
       </View>
-    </View>
+
+      <TouchableOpacity
+        style={styles.scanButton}
+        onPress={handleStartScan}
+        disabled={isLoading}
+      >
+        <Text style={styles.scanButtonText}>
+          {isLoading ? 'Processing...' : 'Scan QR Code'}
+        </Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
@@ -263,7 +388,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  scrollContent: {
     padding: 20,
+    paddingBottom: 40, // Extra padding at bottom for better scrolling
   },
   routeCard: {
     backgroundColor: 'white',
@@ -386,6 +514,7 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 10,
     padding: 10,
+    marginBottom: 5,
     fontSize: 16,
     minHeight: 80,
     textAlignVertical: 'top',

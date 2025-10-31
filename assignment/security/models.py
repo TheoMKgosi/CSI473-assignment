@@ -40,6 +40,10 @@ class ScanLog(models.Model):
         verbose_name = 'Scan Log'
         verbose_name_plural = 'Scan Logs'
         ordering = ['-scanned_at']
+        indexes = [
+            models.Index(fields=['security_guard', 'scanned_at']),
+            models.Index(fields=['scanned_at']),
+        ]
 
     def __str__(self):
         return f"Scan by {self.security_guard.user.get_full_name()} at {self.scanned_at}"

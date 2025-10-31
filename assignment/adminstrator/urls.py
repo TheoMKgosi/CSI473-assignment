@@ -19,4 +19,9 @@ urlpatterns = [
     path('approve-member/<int:member_id>/', views.approve_member, name='approve_member'),
     path('reject-member/<int:member_id>/', views.reject_member, name='reject_member'),
     path('user/<int:user_id>/print-qr/', views.print_qr_code, name='print_qr_code'),
+    path('routes/', views.route_list, name='route_list'),
+    path('routes/create/', views.route_create, name='route_create'),
+    path('routes/<int:route_id>/edit/', views.route_edit, name='route_edit'),
+    path('routes/<int:route_id>/delete/', views.route_delete, name='route_delete'),
+    path('routes/<int:route_id>/assign/', views.assign_route, name='assign_route'),
 ]

@@ -6,12 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { api } from '../../utils/api';
+import { showAlert, showError } from '../../utils/alert';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -105,7 +105,7 @@ const SettingsScreen = () => {
       router.push('/(auth)/login');
     } catch (e) {
       console.error('Logout error:', e);
-      Alert.alert('Error', 'Failed to logout. Please try again.');
+      showError('Failed to logout. Please try again.');
     }
   };
 
@@ -117,12 +117,12 @@ const SettingsScreen = () => {
       router.push('/(auth)/login');
     } catch (e) {
       console.error('Logout error:', e);
-      Alert.alert('Error', 'Failed to logout. Please try again.');
+      showError('Failed to logout. Please try again.');
     }
   };
 
   const handleMenuPress = (item) => {
-    Alert.alert('Feature Coming Soon', `${item} functionality will be available in the next update.`);
+    showAlert('Feature Coming Soon', `${item} functionality will be available in the next update.`);
   };
 
   if (isLoading || !officerProfile) {

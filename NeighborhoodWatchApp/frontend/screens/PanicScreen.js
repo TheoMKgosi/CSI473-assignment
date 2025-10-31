@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from './api';
+import { showAlert, showError } from '../utils/alert';
 
 const PanicScreen = () => {
   const [isPressed, setIsPressed] = useState(false);
@@ -23,50 +26,63 @@ const PanicScreen = () => {
     }, 1000);
 
     // Cancel option
-    Alert.alert(
+    showAlert(
       '🚨 EMERGENCY ALERT',
       `Emergency alert will be sent in ${countdown} seconds. Cancel if this was accidental.`,
       [
-        { 
-          text: 'CANCEL EMERGENCY', 
+        {
+          text: 'CANCEL EMERGENCY',
           style: 'destructive',
           onPress: () => {
             clearInterval(countdownInterval);
             setIsPressed(false);
             setEmergencyCountdown(null);
-            Alert.alert('Cancelled', 'Emergency alert cancelled.');
+            showAlert('Cancelled', 'Emergency alert cancelled.');
           }
         }
       ]
     );
   };
 
-  const sendEmergencyAlert = () => {
-    // Simulate sending alert to backend
-    const emergencyData = {
-      type: 'panic_button',
-      timestamp: new Date().toISOString(),
-      location: 'Current User Location',
-      user: 'demo1@neighborhood.com'
-    };
+  const sendEmergencyAlert = async () => {
+    try {
+      // Get stored token
+      const token = await AsyncStorage.getItem('token');
 
-    console.log('Emergency alert sent:', emergencyData);
+      const response = await fetch(`${API_BASE_URL}/members/panic/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Token ${token}` : '',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Emergency alert sent successfully:', data);
+      } else {
+        console.error('Failed to send emergency alert:', data);
+        showError('Failed to send emergency alert. Please try again.');
+        return;
+      }
+    } catch (error) {
+      console.error('Error sending emergency alert:', error);
+      showError('Network error. Please check your connection.');
+      return;
+    }
     
-    Alert.alert(
+    showAlert(
       '🚨 EMERGENCY ALERT SENT!',
       'Your location and emergency details have been shared with:\n\n• Security patrols\n• Nearby neighbors\n• Emergency services\n\nHelp is on the way!',
       [
-        { 
-          text: 'OK', 
+        {
+          text: 'OK',
           style: 'default',
           onPress: () => {
             setIsPressed(false);
             setEmergencyCountdown(null);
           }
-        },
-        {
-          text: 'Call Emergency Services',
-          onPress: () => Linking.openURL('tel:999')
         }
       ]
     );
@@ -77,7 +93,7 @@ const PanicScreen = () => {
 
   const simulatePushNotification = () => {
     // In a real app, this would send push notifications to nearby users
-    Alert.alert(
+    showAlert(
       '📢 Community Alert',
       'Emergency alert sent to nearby residents. Neighbors have been notified to stay alert.',
       [{ text: 'OK' }]
@@ -86,7 +102,7 @@ const PanicScreen = () => {
 
   const callEmergency = (number) => {
     Linking.openURL(`tel:${number}`)
-      .catch(err => Alert.alert('Error', 'Could not make call'));
+      .catch(err => showError('Could not make call'));
   };
 
   const emergencyContacts = [

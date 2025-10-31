@@ -41,12 +41,12 @@
     
     <div class="header">
         <h1>Security Guard Compliance</h1>
-        <p>Monitor security guard performance and compliance (60% minimum requirement)</p>
+        <p>Monitor security guard performance and compliance (80% minimum requirement)</p>
     </div>
 
     {% if non_compliant_count > 0 %}
         <div class="alert-box">
-            <strong>⚠️ Alert:</strong> {{ non_compliant_count }} security guard(s) are below the 60% compliance requirement. Immediate attention required.
+            <strong>⚠️ Alert:</strong> {{ non_compliant_count }} security guard(s) are below the 80% compliance requirement. Immediate attention required.
         </div>
     {% endif %}
 
@@ -122,18 +122,62 @@
     </div>
 
     <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
-        <h3>Scanned QR Codes</h3>
-        {% if scanned_qr_codes %}
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-                {% for qr in scanned_qr_codes %}
-                    <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                        <img src="{{ qr.image.url }}" alt="Scanned QR Code" style="width: 100px; height: 100px;">
-                        <div style="margin-top: 5px; font-size: 0.9em; color: #666;">{{ qr.user.get_full_name|default:qr.user.username }}</div>
+        <h3>Route Completion Status</h3>
+        {% if route_completion_data %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px;">
+                {% for route_data in route_completion_data %}
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong style="color: #28a745;">{{ route_data.guard.user.get_full_name|default:route_data.guard.user.username }}</strong>
+                            <span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.9em;">
+                                {{ route_data.completion_percentage|floatformat:0 }}%
+                            </span>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Route:</strong> {{ route_data.route_name }}
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Progress:</strong> {{ route_data.scanned_today }} / {{ route_data.total_checkpoints }} checkpoints scanned today
+                        </div>
+                        <div style="width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;">
+                            <div style="width: {{ route_data.completion_percentage }}%; height: 100%; background: linear-gradient(90deg, #28a745, #20c997); border-radius: 4px;"></div>
+                        </div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <p>No scanned QR codes available.</p>
+            <p>No route assignments found. Assign routes to security guards to track their patrol progress.</p>
+        {% endif %}
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
+        <h3>Recent QR Code Scans</h3>
+        {% if scanned_qr_codes %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                {% for scan in scanned_qr_codes %}
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong style="color: #007bff;">{{ scan.security_guard.user.get_full_name|default:scan.security_guard.user.username }}</strong>
+                            <small style="color: #666;">{{ scan.scanned_at|date:"M d, H:i" }}</small>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>QR Data:</strong> <code style="background: #e9ecef; padding: 2px 4px; border-radius: 3px; font-size: 0.9em;">{{ scan.qr_data|truncatechars:50 }}</code>
+                        </div>
+                        {% if scan.location %}
+                            <div style="margin-bottom: 8px;">
+                                <strong>Location:</strong> {{ scan.location }}
+                            </div>
+                        {% endif %}
+                        {% if scan.comment %}
+                            <div style="margin-bottom: 8px;">
+                                <strong>Comment:</strong> <em>{{ scan.comment }}</em>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No recent QR code scans found. Security guards need to scan QR codes during their patrols.</p>
         {% endif %}
     </div>
 {% endblock %}

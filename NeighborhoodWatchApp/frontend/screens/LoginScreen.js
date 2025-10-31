@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_BASE_URL } from './api';
+import { showAlert, showError, showSuccess } from '../utils/alert';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -10,7 +12,7 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
+      showError('Please enter both email and password');
       return;
     }
 
@@ -23,23 +25,23 @@ const LoginScreen = ({ navigation }) => {
       });
 
       if (response.data.success) {
-        Alert.alert('Success! 🎉', 'Logged in successfully!');
+        await AsyncStorage.setItem('token', response.data.token);
+        showSuccess('Logged in successfully!', 'Success! 🎉');
         navigation.navigate('Home', {
-          token: response.data.token,
           user: response.data.user
         });
       } else {
-        Alert.alert('Login Failed', response.data.errors || 'Invalid credentials');
+        showAlert('Login Failed', response.data.errors || 'Invalid credentials');
       }
     } catch (error) {
       console.log('Login error:', error);
       
       if (error.response?.status === 403) {
-        Alert.alert('Approval Required', 'Your account is pending admin approval.');
+        showAlert('Approval Required', 'Your account is pending admin approval.');
       } else if (error.response?.data?.errors) {
-        Alert.alert('Login Failed', error.response.data.errors);
+        showAlert('Login Failed', error.response.data.errors);
       } else if (error.code === 'ERR_NETWORK') {
-        Alert.alert('Demo Mode', 'Using demo login for presentation');
+        showAlert('Demo Mode', 'Using demo login for presentation');
         navigation.navigate('Home', {
           user: { 
             email: email, 
@@ -47,7 +49,7 @@ const LoginScreen = ({ navigation }) => {
           }
         });
       } else {
-        Alert.alert('Error', 'Login failed. Please try again.');
+        showError('Login failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -57,7 +59,7 @@ const LoginScreen = ({ navigation }) => {
   const quickDemo = () => {
     setEmail('demo1@neighborhood.com');
     setPassword('demo123');
-    Alert.alert('Demo Credentials', 'Loaded demo account. Click Login to continue.');
+    showAlert('Demo Credentials', 'Loaded demo account. Click Login to continue.');
   };
 
   return (

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from './api';
+import { showAlert, showError, showSuccess } from '../utils/alert';
 
 const SubscriptionScreen = () => {
   const [status, setStatus] = useState('none');
@@ -21,7 +22,7 @@ const SubscriptionScreen = () => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        setIsLoading(false);
+        showError('Authentication required');
         return;
       }
 
@@ -46,11 +47,11 @@ const SubscriptionScreen = () => {
         }
       } else {
         console.error('Failed to load subscription:', data);
-        Alert.alert('Error', 'Failed to load subscription status');
+        showError('Failed to load subscription status');
       }
     } catch (error) {
       console.error('Error loading subscription:', error);
-      Alert.alert('Error', 'Failed to load subscription status');
+        showError('Failed to load subscription status');
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +63,7 @@ const SubscriptionScreen = () => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert('Error', 'Authentication required');
+        showError('Authentication required');
         return;
       }
 
@@ -81,7 +82,7 @@ const SubscriptionScreen = () => {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert(
+        showAlert(
           'Payment Successful! 🎉',
           `Your ${planName} subscription has been activated.`,
           [
@@ -89,17 +90,17 @@ const SubscriptionScreen = () => {
               text: 'Great!',
               onPress: () => {
                 loadSubscriptionStatus(); // Reload subscription status
-                Alert.alert('📢 Notification', 'Your subscription has been activated! Enjoy premium features.');
+                showAlert('📢 Notification', 'Your subscription has been activated! Enjoy premium features.');
               }
             }
           ]
         );
       } else {
-        Alert.alert('Payment Failed', data.errors || 'Failed to process payment');
+        showAlert('Payment Failed', data.errors || 'Failed to process payment');
       }
     } catch (error) {
       console.error('Payment error:', error);
-      Alert.alert('Error', 'Failed to process payment. Please try again.');
+      showError('Failed to process payment. Please try again.');
     }
   };
 
@@ -109,7 +110,7 @@ const SubscriptionScreen = () => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert('Error', 'Authentication required');
+        showError('Authentication required');
         return;
       }
 
@@ -124,7 +125,7 @@ const SubscriptionScreen = () => {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert(
+        showAlert(
           'Subscription Cancelled',
           'Your premium subscription will remain active until the end of your billing period.',
           [
@@ -132,24 +133,24 @@ const SubscriptionScreen = () => {
               text: 'OK',
               onPress: () => {
                 loadSubscriptionStatus(); // Reload subscription status
-                Alert.alert('📢 Notification', 'Your subscription has been cancelled. You will lose access to premium features after your billing period ends.');
+                showAlert('📢 Notification', 'Your subscription has been cancelled. You will lose access to premium features after your billing period ends.');
               }
             }
           ]
         );
       } else {
-        Alert.alert('Cancellation Failed', data.errors || 'Failed to cancel subscription');
+        showAlert('Cancellation Failed', data.errors || 'Failed to cancel subscription');
       }
     } catch (error) {
       console.error('Cancellation error:', error);
-      Alert.alert('Error', 'Failed to cancel subscription. Please try again.');
+      showError('Failed to cancel subscription. Please try again.');
     }
   };
 
   const toggleNotifications = () => {
     setNotificationsEnabled(!notificationsEnabled);
-    Alert.alert(
-      'Notifications', 
+    showAlert(
+      'Notifications',
       `Push notifications ${!notificationsEnabled ? 'enabled' : 'disabled'}`,
       [{ text: 'OK' }]
     );

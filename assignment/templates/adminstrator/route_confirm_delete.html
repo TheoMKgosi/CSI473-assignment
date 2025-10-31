@@ -1,0 +1,35 @@
+{% extends "adminstrator/base.html" %}
+
+{% block title %}Delete Route{% endblock %}
+
+{% block content %}
+    <h1>Delete Route</h1>
+
+    <div class="section">
+        <p>Are you sure you want to delete the route "{{ route.name }}"?</p>
+
+        <div class="route-details">
+            <p><strong>Description:</strong> {{ route.description|default:'No description' }}</p>
+            <p><strong>Checkpoints:</strong> {{ route.checkpoints.count }}</p>
+            <p><strong>Assigned to:</strong>
+                {% if route.assigned_security_guard %}
+                    {{ route.assigned_security_guard.user.get_full_name|default:route.assigned_security_guard.user.username }}
+                {% else %}
+                    Unassigned
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="warning">
+            <p><strong>Warning:</strong> This action cannot be undone. If this route is assigned to a security guard, they will no longer have a route assigned.</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-danger">Yes, Delete Route</button>
+                <a href="{% url 'adminstrator:route_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

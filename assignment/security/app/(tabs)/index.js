@@ -5,12 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   RefreshControl,
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../utils/api';
+import { showAlert, showError, showSuccess } from '../../utils/alert';
 
 const HomeScreen = () => {
   const [officerData, setOfficerData] = useState(null);
@@ -20,6 +20,7 @@ const HomeScreen = () => {
     { title: 'Equipment Check', value: '0%', status: 'No Data' },
     { title: 'Client Feedback', value: 'N/A', status: 'No Data' },
   ]);
+  const [panicAlerts, setPanicAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -52,6 +53,7 @@ const HomeScreen = () => {
           { title: 'Equipment Check', value: '100%', status: 'Excellent' },
           { title: 'Client Feedback', value: '92%', status: 'Excellent' },
         ]);
+        setPanicAlerts([]); // No demo alerts
         return;
       }
 
@@ -60,8 +62,12 @@ const HomeScreen = () => {
       const profileData = profileResponse.profile;
       const userData = profileResponse.user;
 
-      // Get compliance data
-      const complianceResponse = await api.getComplianceData();
+       // Get compliance data
+       const complianceResponse = await api.getComplianceData();
+
+       // Get panic alerts
+       const alertsResponse = await api.getPanicAlerts();
+       setPanicAlerts(alertsResponse.alerts || []);
 
       setOfficerData({
         ...defaultOfficerData,
@@ -98,7 +104,7 @@ const HomeScreen = () => {
 
     } catch (error) {
       console.error('Failed to load officer data:', error);
-      Alert.alert('Error', 'Failed to load profile data');
+      showError('Failed to load profile data');
       setOfficerData(defaultOfficerData);
     } finally {
       setIsLoading(false);
@@ -116,13 +122,25 @@ const HomeScreen = () => {
   };
 
   const handleStartPatrol = () => {
-    Alert.alert('Start Patrol', 'This will begin a new patrol route.');
+    showAlert('Start Patrol', 'This will begin a new patrol route.');
     // router.push('/patrol'); // Uncomment when you have patrol screen
   };
 
   const handleReportIncident = () => {
-    Alert.alert('Report Incident', 'Navigate to incident reporting.');
+    showAlert('Report Incident', 'Navigate to incident reporting.');
     // router.push('/incident'); // Uncomment when you have incident screen
+  };
+
+  const handleResolveAlert = async (alertId, status) => {
+    try {
+      await api.resolvePanicAlert({ alert_id: alertId, status });
+      showSuccess(`Alert marked as ${status.replace('_', ' ')}`);
+      // Refresh alerts
+      loadOfficerData();
+    } catch (error) {
+      console.error('Failed to resolve alert:', error);
+      showError('Failed to resolve alert');
+    }
   };
 
   if (isLoading) {
@@ -182,9 +200,39 @@ const HomeScreen = () => {
             </View>
           </View>
         ))}
-      </View>
+       </View>
 
-      <View style={styles.quickActions}>
+       {panicAlerts.length > 0 && (
+         <View style={styles.alertsSection}>
+           <Text style={styles.sectionTitle}>🚨 Active Panic Alerts</Text>
+           {panicAlerts.map((alert, index) => (
+             <View key={index} style={styles.alertCard}>
+               <View style={styles.alertHeader}>
+                 <Text style={styles.alertMember}>{alert.member_name}</Text>
+                 <Text style={styles.alertTime}>{new Date(alert.timestamp).toLocaleString()}</Text>
+               </View>
+               <Text style={styles.alertAddress}>{alert.address}</Text>
+               <Text style={styles.alertEmail}>{alert.member_email}</Text>
+               <View style={styles.alertActions}>
+                 <TouchableOpacity
+                   style={[styles.alertButton, styles.resolveButton]}
+                   onPress={() => handleResolveAlert(alert.id, 'resolved')}
+                 >
+                   <Text style={styles.alertButtonText}>Resolve</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity
+                   style={[styles.alertButton, styles.falseAlarmButton]}
+                   onPress={() => handleResolveAlert(alert.id, 'false_alarm')}
+                 >
+                   <Text style={styles.alertButtonText}>False Alarm</Text>
+                 </TouchableOpacity>
+               </View>
+             </View>
+           ))}
+         </View>
+       )}
+
+       <View style={styles.quickActions}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         
         <View style={styles.actionsRow}>
@@ -350,12 +398,78 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  updateText: {
-    textAlign: 'center',
-    color: '#999',
-    fontSize: 12,
-    marginBottom: 20,
-  },
+   updateText: {
+     textAlign: 'center',
+     color: '#999',
+     fontSize: 12,
+     marginBottom: 20,
+   },
+   alertsSection: {
+     backgroundColor: 'white',
+     padding: 20,
+     borderRadius: 15,
+     marginBottom: 20,
+     shadowColor: '#000',
+     shadowOffset: { width: 0, height: 2 },
+     shadowOpacity: 0.1,
+     shadowRadius: 4,
+     elevation: 3,
+   },
+   alertCard: {
+     backgroundColor: '#FFF5F5',
+     padding: 15,
+     borderRadius: 10,
+     marginBottom: 10,
+     borderLeftWidth: 4,
+     borderLeftColor: '#FF3B30',
+   },
+   alertHeader: {
+     flexDirection: 'row',
+     justifyContent: 'space-between',
+     alignItems: 'center',
+     marginBottom: 8,
+   },
+   alertMember: {
+     fontSize: 16,
+     fontWeight: 'bold',
+     color: '#333',
+   },
+   alertTime: {
+     fontSize: 12,
+     color: '#666',
+   },
+   alertAddress: {
+     fontSize: 14,
+     color: '#555',
+     marginBottom: 4,
+   },
+   alertEmail: {
+     fontSize: 12,
+     color: '#777',
+     marginBottom: 10,
+   },
+   alertActions: {
+     flexDirection: 'row',
+     justifyContent: 'space-between',
+   },
+   alertButton: {
+     paddingVertical: 8,
+     paddingHorizontal: 15,
+     borderRadius: 6,
+     minWidth: 80,
+     alignItems: 'center',
+   },
+   resolveButton: {
+     backgroundColor: '#34C759',
+   },
+   falseAlarmButton: {
+     backgroundColor: '#FF9500',
+   },
+   alertButtonText: {
+     color: 'white',
+     fontSize: 12,
+     fontWeight: '600',
+   },
 });
 
 export default HomeScreen;

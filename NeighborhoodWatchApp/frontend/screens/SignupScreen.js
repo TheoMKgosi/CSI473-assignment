@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
 import axios from 'axios';
 import { API_BASE_URL } from './api';
+import { showAlert, showError, showSuccess } from '../utils/alert';
 
 const SignupScreen = ({ navigation }) => {
   const [form, setForm] = useState({
@@ -12,7 +13,7 @@ const SignupScreen = ({ navigation }) => {
   const handleSignup = async () => {
     for (const field in form) {
       if (!form[field].trim()) {
-        Alert.alert('Error', `Please fill in ${field.replace('_', ' ')}`);
+        showError(`Please fill in ${field.replace('_', ' ')}`);
         return;
       }
     }
@@ -23,7 +24,7 @@ const SignupScreen = ({ navigation }) => {
       const response = await axios.post(`${API_BASE_URL}/members/signup/`, form);
       
       if (response.data.success) {
-        Alert.alert(
+        showAlert(
           'Success! 🎉',
           'Account created successfully! Please login with your credentials.',
           [
@@ -34,16 +35,16 @@ const SignupScreen = ({ navigation }) => {
           ]
         );
       } else {
-        Alert.alert('Signup Failed', response.data.errors || 'Please try again.');
+        showAlert('Signup Failed', response.data.errors || 'Please try again.');
       }
     } catch (error) {
       console.log('Signup error:', error);
       
       if (error.response?.data?.errors) {
-        Alert.alert('Signup Failed', error.response.data.errors);
+        showAlert('Signup Failed', error.response.data.errors);
       } else if (error.code === 'ERR_NETWORK') {
         // Network error - redirect to login
-        Alert.alert(
+        showAlert(
           'Connection Issue',
           'Cannot reach server. Please try logging in with a demo account.',
           [
@@ -58,7 +59,7 @@ const SignupScreen = ({ navigation }) => {
           ]
         );
       } else {
-        Alert.alert('Error', 'Signup failed. Please try again.');
+        showError('Signup failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -67,7 +68,7 @@ const SignupScreen = ({ navigation }) => {
 
   const openAdminPanel = () => {
     Linking.openURL('https://super-palm-tree-69499prjx6rp24xg7-8000.app.github.dev/admin')
-      .catch(err => Alert.alert('Error', 'Cannot open admin panel'));
+      .catch(err => showError('Cannot open admin panel'));
   };
 
   const useDemoAccount = (accountNumber) => {
@@ -78,7 +79,7 @@ const SignupScreen = ({ navigation }) => {
     ];
     
     const demo = demos[accountNumber - 1];
-    Alert.alert(
+    showAlert(
       'Demo Account',
       `Use this account to login:\n\nEmail: ${demo.email}\nPassword: ${demo.password}`,
       [{ text: 'Go to Login', onPress: () => navigation.navigate('Login') }]

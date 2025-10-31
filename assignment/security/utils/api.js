@@ -66,11 +66,22 @@ export const api = {
     return this.request('/security/compliance/');
   },
 
+  async getRoute() {
+    return this.request('/security/route/');
+  },
+
   // Patrol endpoints
   async validateQRCode(qrData) {
     return this.request('/security/validate-qr/', {
       method: 'POST',
       body: { qr_data: qrData },
+    });
+  },
+
+  async scanQRCode(scanData) {
+    return this.request('/security/scan-qr/', {
+      method: 'POST',
+      body: scanData,
     });
   },
 
@@ -81,12 +92,23 @@ export const api = {
     });
   },
 
-  async logScan(scanData) {
-    return this.request('/security/log-scan/', {
-      method: 'POST',
-      body: scanData,
-    });
-  },
+   async logScan(scanData) {
+     return this.request('/security/log-scan/', {
+       method: 'POST',
+       body: scanData,
+     });
+   },
+
+   async getPanicAlerts() {
+     return this.request('/security/panic-alerts/');
+   },
+
+   async resolvePanicAlert(alertData) {
+     return this.request('/security/resolve-alert/', {
+       method: 'POST',
+       body: alertData,
+     });
+   },
 };
 
 // Legacy function for compatibility

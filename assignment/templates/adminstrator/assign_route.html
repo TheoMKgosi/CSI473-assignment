@@ -1,0 +1,47 @@
+{% extends "adminstrator/base.html" %}
+
+{% block title %}Assign Route{% endblock %}
+
+{% block content %}
+    <h1>Assign Route: {{ route.name }}</h1>
+
+    <div class="section">
+        <div class="route-details">
+            <p><strong>Description:</strong> {{ route.description|default:'No description' }}</p>
+            <p><strong>Checkpoints:</strong> {{ route.checkpoints.count }}</p>
+            <p><strong>Currently Assigned to:</strong>
+                {% if route.assigned_security_guard %}
+                    {{ route.assigned_security_guard.user.get_full_name|default:route.assigned_security_guard.user.username }}
+                {% else %}
+                    Unassigned
+                {% endif %}
+            </p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="security_guard">Select Security Guard:</label>
+                <select name="security_guard" id="security_guard" class="form-control">
+                    <option value="">-- Unassign Route --</option>
+                    {% for guard in available_guards %}
+                        <option value="{{ guard.id }}" {% if route.assigned_security_guard and route.assigned_security_guard.id == guard.id %}selected{% endif %}>
+                            {{ guard.user.get_full_name|default:guard.user.username }} ({{ guard.employee_id }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if not available_guards %}
+                <div class="info">
+                    <p>No approved security guards are available for assignment. All guards are already assigned to routes.</p>
+                </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Assign Route</button>
+                <a href="{% url 'adminstrator:route_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

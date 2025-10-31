@@ -8,8 +8,8 @@ from django.utils import timezone
 from django.core.paginator import Paginator
 from security.models import SecurityProfile
 from members.models import UserProfile
-from .models import House, Subscription, SecurityCompliance
-from .forms import AdministratorSignupForm, AdministratorLoginForm, CreateAdministratorForm
+from .models import House, Subscription, SecurityCompliance, Route
+from .forms import AdministratorSignupForm, AdministratorLoginForm, CreateAdministratorForm, RouteForm
 
 def administrator_signup(request):
     """Handle administrator registration"""
@@ -51,12 +51,20 @@ def administrator_dashboard(request):
     pending_security = SecurityProfile.objects.filter(status='pending')
     approved_security = SecurityProfile.objects.filter(status='approved')
     rejected_security = SecurityProfile.objects.filter(status='rejected')
-    
+
     # Get all member profiles
     pending_members = UserProfile.objects.filter(status='pending')
     approved_members = UserProfile.objects.filter(status='approved')
     rejected_members = UserProfile.objects.filter(status='rejected')
-    
+
+    # Get subscription statistics
+    subscriptions = Subscription.objects.all()
+    total_subscriptions = subscriptions.count()
+    active_subscriptions = subscriptions.filter(status='active').count()
+    monthly_revenue = subscriptions.filter(status='active').aggregate(
+        total=Sum('monthly_fee')
+    )['total'] or 0
+
     context = {
         'pending_security': pending_security,
         'approved_security': approved_security,
@@ -72,6 +80,9 @@ def administrator_dashboard(request):
         'approved_members_count': approved_members.count(),
         'rejected_members_count': rejected_members.count(),
         'not_members_count': pending_members.count(),
+        'total_subscriptions': total_subscriptions,
+        'active_subscriptions': active_subscriptions,
+        'monthly_revenue': monthly_revenue,
     }
     return render(request, 'adminstrator/dashboard.html', context)
 
@@ -204,18 +215,44 @@ def security_compliance_dashboard(request):
     # Sort by compliance score (lowest first for attention)
     compliance_records.sort(key=lambda x: x['compliance_score'])
 
-    # Get scanned QR codes (QR codes of security guards)
+    # Get recent scan logs (QR codes scanned by security guards)
+    from security.models import ScanLog
+    recent_scans = ScanLog.objects.filter(
+        security_guard__in=all_guards
+    ).select_related('security_guard__user').order_by('-scanned_at')[:20]  # Last 20 scans
+
     scanned_qr_codes = []
+    for scan in recent_scans:
+        scanned_qr_codes.append({
+            'security_guard': scan.security_guard,
+            'qr_data': scan.qr_data,
+            'comment': scan.comment,
+            'location': scan.location,
+            'scanned_at': scan.scanned_at,
+        })
+
+    # Get route completion data
+    route_completion_data = []
     for guard in all_guards:
-        try:
-            profile = guard.user.userprofile
-            if profile.qr_code:
-                scanned_qr_codes.append({
-                    'image': profile.qr_code,
-                    'user': guard.user,
-                })
-        except UserProfile.DoesNotExist:
-            pass
+        assigned_route = Route.objects.filter(assigned_security_guard=guard).first()
+        if assigned_route:
+            total_checkpoints = assigned_route.checkpoints.count()
+            # Count member checkpoint QR scans for this guard today
+            from datetime import date
+            today = date.today()
+            member_scans_today = ScanLog.objects.filter(
+                security_guard=guard,
+                qr_data__startswith='member:',
+                scanned_at__date=today
+            ).count()
+
+            route_completion_data.append({
+                'guard': guard,
+                'route_name': assigned_route.name,
+                'total_checkpoints': total_checkpoints,
+                'scanned_today': member_scans_today,
+                'completion_percentage': (member_scans_today / total_checkpoints * 100) if total_checkpoints > 0 else 0,
+            })
 
     context = {
         'total_guards': total_guards,
@@ -225,6 +262,7 @@ def security_compliance_dashboard(request):
         'overall_compliance_class': overall_compliance_class,
         'compliance_records': compliance_records,
         'scanned_qr_codes': scanned_qr_codes,
+        'route_completion_data': route_completion_data,
     }
     return render(request, 'adminstrator/security_compliance.html', context)
 
@@ -392,3 +430,82 @@ def administrator_logout(request):
     logout(request)
     messages.info(request, 'You have been logged out.')
     return redirect('adminstrator:administrator_login')
+
+
+@login_required
+def route_list(request):
+    """List all routes"""
+    routes = Route.objects.all().order_by('name')
+    context = {
+        'routes': routes,
+    }
+    return render(request, 'adminstrator/route_list.html', context)
+
+
+@login_required
+def route_create(request):
+    """Create a new route"""
+    if request.method == 'POST':
+        form = RouteForm(request.POST)
+        if form.is_valid():
+            route = form.save()
+            messages.success(request, f'Route "{route.name}" has been created successfully.')
+            return redirect('adminstrator:route_list')
+    else:
+        form = RouteForm()
+    return render(request, 'adminstrator/route_form.html', {'form': form, 'title': 'Create Route'})
+
+
+@login_required
+def route_edit(request, route_id):
+    """Edit an existing route"""
+    route = get_object_or_404(Route, id=route_id)
+    if request.method == 'POST':
+        form = RouteForm(request.POST, instance=route)
+        if form.is_valid():
+            route = form.save()
+            messages.success(request, f'Route "{route.name}" has been updated successfully.')
+            return redirect('adminstrator:route_list')
+    else:
+        form = RouteForm(instance=route)
+    return render(request, 'adminstrator/route_form.html', {'form': form, 'title': 'Edit Route'})
+
+
+@login_required
+def route_delete(request, route_id):
+    """Delete a route"""
+    route = get_object_or_404(Route, id=route_id)
+    if request.method == 'POST':
+        route_name = route.name
+        route.delete()
+        messages.success(request, f'Route "{route_name}" has been deleted successfully.')
+        return redirect('adminstrator:route_list')
+    return render(request, 'adminstrator/route_confirm_delete.html', {'route': route})
+
+
+@login_required
+def assign_route(request, route_id):
+    """Assign a route to a security guard"""
+    route = get_object_or_404(Route, id=route_id)
+    if request.method == 'POST':
+        security_id = request.POST.get('security_guard')
+        if security_id:
+            security_guard = get_object_or_404(SecurityProfile, id=security_id, status='approved')
+            route.assigned_security_guard = security_guard
+            route.save()
+            messages.success(request, f'Route "{route.name}" has been assigned to {security_guard.user.get_full_name()}.')
+        else:
+            route.assigned_security_guard = None
+            route.save()
+            messages.success(request, f'Route "{route.name}" has been unassigned.')
+        return redirect('adminstrator:route_list')
+
+    # Get approved security guards not already assigned to another route
+    assigned_guards = Route.objects.exclude(assigned_security_guard__isnull=True).values_list('assigned_security_guard', flat=True)
+    available_guards = SecurityProfile.objects.filter(status='approved').exclude(id__in=assigned_guards)
+
+    context = {
+        'route': route,
+        'available_guards': available_guards,
+    }
+    return render(request, 'adminstrator/assign_route.html', context)

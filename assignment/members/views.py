@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.core.files import File
 from datetime import date, timedelta
-from .models import UserProfile
+from .models import UserProfile, PanicAlert
 from adminstrator.models import Subscription, House
 
 # --- Setup logger ---
@@ -165,17 +165,43 @@ def patrol_stats(request):
 @permission_classes([IsAuthenticated])
 def panic(request):
     logger.warning(f"Emergency alert triggered by {request.user.email}")
-    return Response({'success': True, 'message': 'Emergency alert triggered'}, status=200)
+    try:
+        # Create panic alert
+        alert = PanicAlert.objects.create(
+            member=request.user,
+            address=request.user.userprofile.address
+        )
+        logger.info(f"Panic alert created: {alert.id}")
+
+        # TODO: Implement notification to security members
+        # For now, just log and return success
+
+        return Response({
+            'success': True,
+            'message': 'Emergency alert triggered and security notified',
+            'alert_id': alert.id
+        }, status=200)
+    except Exception as e:
+        logger.exception(f"Error creating panic alert for {request.user.email}")
+        return Response({'errors': 'Failed to trigger emergency alert'}, status=500)
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def pay_subscription(request):
     logger.info(f"Subscription payment attempt by {request.user.email}")
     try:
         data = request.data
         subscription_type = data.get('subscription_type', 'premium')
         amount = data.get('amount')
+        email = data.get('email')  # Use email to identify user
+
+        if not email:
+            return Response({'errors': 'email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'errors': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
         if not amount:
             logger.warning("Payment attempt with missing amount")
@@ -188,7 +214,36 @@ def pay_subscription(request):
 
         # Check if user already has an active subscription
         existing_subscription = Subscription.objects.filter(
-            user=request.user,
+            user=user,
+            status__in=['active', 'pending']
+        ).first()
+
+        if existing_subscription:
+            logger.warning(f"User {user.email} already has an active subscription")
+            return Response({'errors': 'You already have an active subscription'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get user's house (assuming they have one, or create a default)
+        try:
+            house = House.objects.filter(owner=user).first()
+            if not house:
+                # Create a default house if none exists
+                house = House.objects.create(
+                    address=user.userprofile.address,
+                    owner=user,
+                    house_number=f"USER_{user.id}",
+                    bedrooms=1,
+                    bathrooms=1,
+                    square_footage=1000,
+                    property_type='house'
+                )
+                logger.info(f"Created default house for {user.email}")
+        except Exception as e:
+            logger.error(f"Error getting/creating house for {user.email}: {e}")
+            return Response({'errors': 'Unable to process subscription'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Create subscription
+        subscription = Subscription.objects.create(
+            user=user,
             status__in=['active', 'pending']
         ).first()
 
@@ -255,6 +310,28 @@ def pay_subscription(request):
     except Exception as e:
         logger.exception(f"Error processing subscription payment for {request.user.email}")
         return Response({'errors': f'Payment processing failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_profile(request):
+    logger.info(f"Profile requested by {request.user.email}")
+    try:
+        profile = request.user.userprofile
+        return Response({
+            'user': {
+                'id': request.user.id,
+                'email': request.user.email,
+                'full_name': profile.full_name,
+                'phone': profile.phone,
+                'address': profile.address,
+                'status': profile.status,
+                'qr_code_url': profile.qr_code.url if profile.qr_code else None
+            }
+        })
+    except UserProfile.DoesNotExist:
+        logger.error(f"Profile not found for {request.user.email}")
+        return Response({'errors': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET'])

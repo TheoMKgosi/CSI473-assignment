@@ -74,6 +74,7 @@
         <a href="{% url 'adminstrator:user_management' %}" {% if request.resolver_match.url_name == 'user_management' %}class="active"{% endif %}>👥 User Management</a>
         <a href="{% url 'adminstrator:security_compliance' %}" {% if request.resolver_match.url_name == 'security_compliance' %}class="active"{% endif %}>🛡️ Security Compliance</a>
         <a href="{% url 'adminstrator:subscription_statistics' %}" {% if request.resolver_match.url_name == 'subscription_statistics' %}class="active"{% endif %}>💳 Subscription Statistics</a>
+        <a href="{% url 'adminstrator:route_list' %}" {% if 'route' in request.resolver_match.url_name %}class="active"{% endif %}>🗺️ Route Management</a>
         <a href="{% url 'adminstrator:create_administrator' %}" {% if request.resolver_match.url_name == 'create_administrator' %}class="active"{% endif %}>👔 Create Administrator</a>
         <a href="{% url 'adminstrator:administrator_logout' %}" class="logout-btn">Logout</a>
     </div>
